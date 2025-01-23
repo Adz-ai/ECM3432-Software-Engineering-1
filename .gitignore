@@ -39,6 +39,13 @@ go.work.sum
 # AWS User-specific
 .idea/**/aws.xml
 
+/tmp/
+/docs/
+
+/backend/docs/
+/backend/tmp/
+
+
 # Generated files
 .idea/**/contentModel.xml
 
@@ -103,3 +110,5 @@ fabric.properties
 
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
+/.idea/sqldialects.xml
+/idea/
