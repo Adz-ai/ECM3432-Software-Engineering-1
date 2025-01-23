@@ -5,6 +5,7 @@ import (
 	"chalkstone.council/internal/middleware"
 	"chalkstone.council/internal/models"
 	"chalkstone.council/internal/utils"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -31,17 +32,20 @@ func NewHandler(db *database.DB) *Handler {
 func (h *Handler) CreateIssue(c *gin.Context) {
 	var issue models.IssueCreate
 	if err := c.ShouldBindJSON(&issue); err != nil {
+		log.Printf("Binding error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if !models.ValidateIssueType(issue.Type) {
+		log.Printf("Invalid issue type: %v", issue.Type)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid issue type"})
 		return
 	}
 
 	id, err := h.db.CreateIssue(&issue)
 	if err != nil {
+		log.Printf("Create issue error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create issue"})
 		return
 	}
@@ -63,17 +67,20 @@ func (h *Handler) CreateIssue(c *gin.Context) {
 func (h *Handler) UpdateIssue(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
+		log.Printf("Invalid ID: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
 
 	var update models.IssueUpdate
 	if err := c.ShouldBindJSON(&update); err != nil {
+		log.Printf("Binding error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if update.Status != nil && !models.ValidateIssueStatus(*update.Status) {
+		log.Printf("Invalid issue status: %v", update.Status)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid issue status"})
 		return
 	}
@@ -81,11 +88,13 @@ func (h *Handler) UpdateIssue(c *gin.Context) {
 	// Check if user is staff (from JWT middleware)
 	userType, _ := c.Get("userType")
 	if userType != "staff" {
+		log.Printf("Staff access required")
 		c.JSON(http.StatusForbidden, gin.H{"error": "Staff access required"})
 		return
 	}
 
 	if err := h.db.UpdateIssue(id, &update); err != nil {
+		log.Printf("Update issue error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update issue"})
 		return
 	}
@@ -104,17 +113,20 @@ func (h *Handler) UpdateIssue(c *gin.Context) {
 func (h *Handler) GetIssue(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
+		log.Printf("Invalid ID: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
 
 	issue, err := h.db.GetIssue(id)
 	if err != nil {
+		log.Printf("Get issue error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get issue"})
 		return
 	}
 
 	if issue == nil {
+		log.Printf("Issue not found")
 		c.JSON(http.StatusNotFound, gin.H{"error": "Issue not found"})
 		return
 	}
@@ -146,6 +158,7 @@ func (h *Handler) ListIssues(c *gin.Context) {
 
 	issues, err := h.db.ListIssues(page, pageSize)
 	if err != nil {
+		log.Printf("List issues error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list issues"})
 		return
 	}
@@ -172,17 +185,20 @@ func (h *Handler) SearchIssues(c *gin.Context) {
 	status := c.Query("status")
 
 	if issueType != "" && !models.ValidateIssueType(models.IssueType(issueType)) {
+		log.Printf("Invalid issue type: %v", issueType)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid issue type"})
 		return
 	}
 
 	if status != "" && !models.ValidateIssueStatus(models.IssueStatus(status)) {
+		log.Printf("Invalid status: %v", status)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status"})
 		return
 	}
 
 	issues, err := h.db.SearchIssues(issueType, status)
 	if err != nil {
+		log.Printf("Search issues error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search issues"})
 		return
 	}
@@ -206,23 +222,27 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&creds); err != nil {
+		log.Printf("Invalid credentials: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	user, err := h.db.GetUserByUsername(creds.Username)
 	if err != nil {
+		log.Printf("Get user error: %v", err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
 	if !utils.CheckPasswordHash(creds.Password, user.PasswordHash) {
+		log.Printf("Invalid credentials")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
 	token, err := middleware.GenerateToken(user.Username, user.UserType)
 	if err != nil {
+		log.Printf("Generate token error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
@@ -247,12 +267,14 @@ func (h *Handler) Register(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&reg); err != nil {
+		log.Printf("Invalid registration details: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	hashedPassword, err := utils.HashPassword(reg.Password)
 	if err != nil {
+		log.Printf("Hash password error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process password"})
 		return
 	}
@@ -264,12 +286,14 @@ func (h *Handler) Register(c *gin.Context) {
 
 	err = h.db.CreateUser(reg.Username, hashedPassword, userType)
 	if err != nil {
+		log.Printf("Create user error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
 
 	token, err := middleware.GenerateToken(reg.Username, userType)
 	if err != nil {
+		log.Printf("Generate token error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}

@@ -3,19 +3,21 @@ package database
 import (
 	"chalkstone.council/internal/models"
 	"database/sql"
+	"github.com/lib/pq"
+	"log"
 )
 
 func (db *DB) CreateIssue(issue *models.IssueCreate) (int64, error) {
 	var id int64
 	err := db.QueryRow(`
         INSERT INTO issues (type, description, latitude, longitude, images, reported_by, status)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        VALUES ($1, $2, $3, $4, $5::text[], $6, $7)
         RETURNING id`,
 		issue.Type,
 		issue.Description,
 		issue.Location.Latitude,
 		issue.Location.Longitude,
-		issue.Images,
+		pq.Array(issue.Images),
 		issue.ReportedBy,
 		models.StatusNew,
 	).Scan(&id)
@@ -25,12 +27,11 @@ func (db *DB) CreateIssue(issue *models.IssueCreate) (int64, error) {
 	}
 	return id, nil
 }
-
 func (db *DB) GetIssue(id int64) (*models.Issue, error) {
 	var issue models.Issue
 	err := db.QueryRow(`
         SELECT id, type, status, description, latitude, longitude,
-               images, reported_by, assigned_to, created_at, updated_at
+               images::text[], reported_by, assigned_to, created_at, updated_at
         FROM issues WHERE id = $1`,
 		id,
 	).Scan(
@@ -40,7 +41,7 @@ func (db *DB) GetIssue(id int64) (*models.Issue, error) {
 		&issue.Description,
 		&issue.Location.Latitude,
 		&issue.Location.Longitude,
-		&issue.Images,
+		pq.Array(&issue.Images),
 		&issue.ReportedBy,
 		&issue.AssignedTo,
 		&issue.CreatedAt,
@@ -86,7 +87,7 @@ func (db *DB) ListIssues(page, pageSize int) ([]*models.Issue, error) {
 	offset := (page - 1) * pageSize
 	rows, err := db.Query(`
         SELECT id, type, status, description, latitude, longitude,
-               images, reported_by, assigned_to, created_at, updated_at
+               images::text[], reported_by, assigned_to, created_at, updated_at
         FROM issues
         ORDER BY created_at DESC
         LIMIT $1 OFFSET $2`,
@@ -95,7 +96,12 @@ func (db *DB) ListIssues(page, pageSize int) ([]*models.Issue, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			log.Printf("Failed to close rows: %v", err)
+		}
+	}(rows)
 
 	var issues []*models.Issue
 	for rows.Next() {
@@ -107,7 +113,7 @@ func (db *DB) ListIssues(page, pageSize int) ([]*models.Issue, error) {
 			&issue.Description,
 			&issue.Location.Latitude,
 			&issue.Location.Longitude,
-			&issue.Images,
+			pq.Array(&issue.Images),
 			&issue.ReportedBy,
 			&issue.AssignedTo,
 			&issue.CreatedAt,
@@ -124,7 +130,7 @@ func (db *DB) ListIssues(page, pageSize int) ([]*models.Issue, error) {
 func (db *DB) SearchIssues(issueType, status string) ([]*models.Issue, error) {
 	rows, err := db.Query(`
         SELECT id, type, status, description, latitude, longitude,
-               images, reported_by, assigned_to, created_at, updated_at
+               images::text[], reported_by, assigned_to, created_at, updated_at
         FROM issues
         WHERE ($1 = '' OR type = $1::issue_type)
         AND ($2 = '' OR status = $2::issue_status)
@@ -134,7 +140,12 @@ func (db *DB) SearchIssues(issueType, status string) ([]*models.Issue, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			log.Printf("Failed to close rows: %v", err)
+		}
+	}(rows)
 
 	var issues []*models.Issue
 	for rows.Next() {
@@ -146,7 +157,7 @@ func (db *DB) SearchIssues(issueType, status string) ([]*models.Issue, error) {
 			&issue.Description,
 			&issue.Location.Latitude,
 			&issue.Location.Longitude,
-			&issue.Images,
+			pq.Array(&issue.Images),
 			&issue.ReportedBy,
 			&issue.AssignedTo,
 			&issue.CreatedAt,
