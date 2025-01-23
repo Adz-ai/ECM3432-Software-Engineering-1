@@ -41,6 +41,9 @@ go.work.sum
 /tmp/
 /docs/
 
+backend/docs/
+backend/tmp/
+
 
 # Generated files
 .idea/**/contentModel.xml
