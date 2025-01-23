@@ -13,7 +13,7 @@ GOBUILD=$(GOCMD) build
 GORUN=$(GOCMD) run
 GOTEST=$(GOCMD) test
 GOMOD=$(GOCMD) mod
-BINARY_NAME=exeter-council-api
+BINARY_NAME=chalkstone-council-api
 MAIN_PATH=cmd/api/main.go
 
 build:
