@@ -41,8 +41,8 @@ go.work.sum
 /tmp/
 /docs/
 
-backend/docs
-backend/tmp
+/backend/docs/
+/backend/tmp/
 
 
 # Generated files
