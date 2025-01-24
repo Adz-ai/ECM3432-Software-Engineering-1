@@ -31,7 +31,7 @@ import (
 // @host      localhost:8080
 // @BasePath  /api
 
-// @securityDefinitions.apikey Bearer
+// @SecurityDefinitions.apiKey Bearer
 // @in header
 // @name Authorization
 // @description Type "Bearer" followed by a space and JWT token.
@@ -66,7 +66,7 @@ func main() {
 	r.Use(middleware.Logging())
 	r.Use(middleware.RateLimit(middleware.NewIPRateLimiter(2, 5))) // 2 requests per second, burst of 5
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:8080"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
