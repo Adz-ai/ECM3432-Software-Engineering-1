@@ -22,6 +22,7 @@ func SetupRoutes(r *gin.Engine, db *database.DB) {
 	{
 		public.POST("", handler.CreateIssue)
 		public.GET("/:id", handler.GetIssue)
+		public.GET("/map", handler.GetIssuesForMap)
 	}
 
 	// Protected routes

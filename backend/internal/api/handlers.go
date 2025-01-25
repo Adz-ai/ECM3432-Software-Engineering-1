@@ -28,25 +28,30 @@ func NewHandler(db *database.DB) *Handler {
 // @Param issue body models.IssueCreate true "Issue details"
 // @Success 201 {object} map[string]int64
 // @Failure 400 {object} map[string]string
+// @Security Bearer
 // @Router /issues [post]
 func (h *Handler) CreateIssue(c *gin.Context) {
+	// Authenticate user
+	_, exists := c.Get("userID")
+	if !exists {
+		utils.RespondWithError(c, http.StatusUnauthorized, "Unauthorized access", nil)
+		return
+	}
+
 	var issue models.IssueCreate
 	if err := c.ShouldBindJSON(&issue); err != nil {
-		log.Printf("Binding error: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondWithError(c, http.StatusBadRequest, err.Error(), err)
 		return
 	}
 
 	if !models.ValidateIssueType(issue.Type) {
-		log.Printf("Invalid issue type: %v", issue.Type)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid issue type"})
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid issue type", nil)
 		return
 	}
 
 	id, err := h.db.CreateIssue(&issue)
 	if err != nil {
-		log.Printf("Create issue error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create issue"})
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to create issue", err)
 		return
 	}
 
@@ -62,40 +67,35 @@ func (h *Handler) CreateIssue(c *gin.Context) {
 // @Param issue body models.IssueUpdate true "Issue update details"
 // @Success 200 {object} map[string]string
 // @Failure 400,404 {object} map[string]string
-// @Security BearerAuth
+// @Security Bearer
 // @Router /issues/{id} [put]
 func (h *Handler) UpdateIssue(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
-		log.Printf("Invalid ID: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid ID", err)
 		return
 	}
 
 	var update models.IssueUpdate
 	if err := c.ShouldBindJSON(&update); err != nil {
-		log.Printf("Binding error: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondWithError(c, http.StatusBadRequest, err.Error(), err)
 		return
 	}
 
 	if update.Status != nil && !models.ValidateIssueStatus(*update.Status) {
-		log.Printf("Invalid issue status: %v", update.Status)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid issue status"})
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid issue status", nil)
 		return
 	}
 
-	// Check if user is staff (from JWT middleware)
+	// Staff authorization check
 	userType, _ := c.Get("userType")
 	if userType != "staff" {
-		log.Printf("Staff access required")
-		c.JSON(http.StatusForbidden, gin.H{"error": "Staff access required"})
+		utils.RespondWithError(c, http.StatusForbidden, "Staff access required", nil)
 		return
 	}
 
 	if err := h.db.UpdateIssue(id, &update); err != nil {
-		log.Printf("Update issue error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update issue"})
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to update issue", err)
 		return
 	}
 
@@ -109,25 +109,30 @@ func (h *Handler) UpdateIssue(c *gin.Context) {
 // @Param id path int true "Issue ID"
 // @Success 200 {object} models.Issue
 // @Failure 404 {object} map[string]string
+// @Security Bearer
 // @Router /issues/{id} [get]
 func (h *Handler) GetIssue(c *gin.Context) {
+	// Authenticate user
+	_, exists := c.Get("userID")
+	if !exists {
+		utils.RespondWithError(c, http.StatusUnauthorized, "Unauthorized access", nil)
+		return
+	}
+
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
-		log.Printf("Invalid ID: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid ID", err)
 		return
 	}
 
 	issue, err := h.db.GetIssue(id)
 	if err != nil {
-		log.Printf("Get issue error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get issue"})
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to get issue", err)
 		return
 	}
 
 	if issue == nil {
-		log.Printf("Issue not found")
-		c.JSON(http.StatusNotFound, gin.H{"error": "Issue not found"})
+		utils.RespondWithError(c, http.StatusNotFound, "Issue not found", nil)
 		return
 	}
 
@@ -142,9 +147,16 @@ func (h *Handler) GetIssue(c *gin.Context) {
 // @Param pageSize query int false "Page size" default(10)
 // @Success 200 {array} models.Issue
 // @Failure 500 {object} map[string]string
-// @Security BearerAuth
+// @Security Bearer
 // @Router /issues [get]
 func (h *Handler) ListIssues(c *gin.Context) {
+	// Authenticate user
+	_, exists := c.Get("userID")
+	if !exists {
+		utils.RespondWithError(c, http.StatusUnauthorized, "Unauthorized access", nil)
+		return
+	}
+
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
 
@@ -158,8 +170,7 @@ func (h *Handler) ListIssues(c *gin.Context) {
 
 	issues, err := h.db.ListIssues(page, pageSize)
 	if err != nil {
-		log.Printf("List issues error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list issues"})
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to list issues", err)
 		return
 	}
 
@@ -170,6 +181,35 @@ func (h *Handler) ListIssues(c *gin.Context) {
 	})
 }
 
+// @Summary Get issues for map
+// @Description Retrieve issue locations and types for the map view
+// @Tags issues
+// @Produce json
+// @Success 200 {array} object{type=string,location=object{latitude=float64,longitude=float64},status=string}
+// @Failure 500 {object} map[string]string
+// @Router /issues/map [get]
+func (h *Handler) GetIssuesForMap(c *gin.Context) {
+	issues, err := h.db.GetIssuesForMap()
+	if err != nil {
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to retrieve issues for map", err)
+		return
+	}
+
+	mapIssues := make([]map[string]interface{}, len(issues))
+	for i, issue := range issues {
+		mapIssues[i] = map[string]interface{}{
+			"type": issue.Type,
+			"location": map[string]float64{
+				"latitude":  issue.Location.Latitude,
+				"longitude": issue.Location.Longitude,
+			},
+			"status": issue.Status,
+		}
+	}
+
+	c.JSON(http.StatusOK, mapIssues)
+}
+
 // @Summary Search issues
 // @Description Search issues by type and status
 // @Tags issues
@@ -178,28 +218,25 @@ func (h *Handler) ListIssues(c *gin.Context) {
 // @Param status query string false "Issue status"
 // @Success 200 {array} models.Issue
 // @Failure 400 {object} map[string]string
-// @Security BearerAuth
+// @Security Bearer
 // @Router /issues/search [get]
 func (h *Handler) SearchIssues(c *gin.Context) {
 	issueType := c.Query("type")
 	status := c.Query("status")
 
 	if issueType != "" && !models.ValidateIssueType(models.IssueType(issueType)) {
-		log.Printf("Invalid issue type: %v", issueType)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid issue type"})
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid issue type", nil)
 		return
 	}
 
 	if status != "" && !models.ValidateIssueStatus(models.IssueStatus(status)) {
-		log.Printf("Invalid status: %v", status)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status"})
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid status", nil)
 		return
 	}
 
 	issues, err := h.db.SearchIssues(issueType, status)
 	if err != nil {
-		log.Printf("Search issues error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search issues"})
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to search issues", err)
 		return
 	}
 

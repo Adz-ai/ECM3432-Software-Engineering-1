@@ -57,6 +57,37 @@ func (db *DB) GetIssue(id int64) (*models.Issue, error) {
 	return &issue, nil
 }
 
+func (db *DB) GetIssuesForMap() ([]*models.Issue, error) {
+	rows, err := db.Query(`
+		SELECT type, latitude, longitude, status
+		FROM issues`)
+	if err != nil {
+		return nil, err
+	}
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			log.Printf("Failed to close rows: %v", err)
+		}
+	}(rows)
+
+	var issues []*models.Issue
+	for rows.Next() {
+		var issue models.Issue
+		err := rows.Scan(
+			&issue.Type,
+			&issue.Location.Latitude,
+			&issue.Location.Longitude,
+			&issue.Status,
+		)
+		if err != nil {
+			return nil, err
+		}
+		issues = append(issues, &issue)
+	}
+	return issues, nil
+}
+
 func (db *DB) UpdateIssue(id int64, update *models.IssueUpdate) error {
 	result, err := db.Exec(`
         UPDATE issues
