@@ -243,6 +243,52 @@ func (h *Handler) SearchIssues(c *gin.Context) {
 	c.JSON(http.StatusOK, issues)
 }
 
+// @Summary Get issue analytics
+// @Description Retrieve aggregated statistics for issues within a specified time range
+// @Tags issues
+// @Produce json
+// @Param startDate query string false "Start date (YYYY-MM-DD)"
+// @Param endDate query string false "End date (YYYY-MM-DD)"
+// @Success 200 {object} map[string]interface{}
+// @Failure 403 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Security BearerAuth
+// @Router /issues/analytics [get]
+func (h *Handler) GetIssueAnalytics(c *gin.Context) {
+	// Ensure only staff can access
+	userType, _ := c.Get("userType")
+	if userType != "staff" {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Staff access required"})
+		return
+	}
+
+	startDate := c.Query("startDate")
+	endDate := c.Query("endDate")
+
+	stats, err := h.db.GetIssueAnalytics(startDate, endDate)
+	if err != nil {
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to retrieve analytics", err)
+		return
+	}
+
+	resolutionTime, err := h.db.GetAverageResolutionTime()
+	if err != nil {
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to retrieve resolution time analytics", err)
+		return
+	}
+
+	engineerPerformance, err := h.db.GetEngineerPerformance()
+	if err != nil {
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to retrieve engineer performance", err)
+		return
+	}
+
+	stats["average_resolution_time"] = resolutionTime
+	stats["engineer_performance"] = engineerPerformance
+
+	c.JSON(http.StatusOK, stats)
+}
+
 // @Summary User login
 // @Description Authenticate user and receive JWT token
 // @Tags auth

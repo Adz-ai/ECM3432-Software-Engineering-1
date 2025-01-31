@@ -3,6 +3,7 @@ package database
 import (
 	"chalkstone.council/internal/models"
 	"database/sql"
+	"fmt"
 	"github.com/lib/pq"
 	"log"
 )
@@ -220,4 +221,97 @@ func (db *DB) GetUserByUsername(username string) (*models.User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (db *DB) GetAverageResolutionTime() (map[string]string, error) {
+	query := `SELECT type, 
+                     AVG(EXTRACT(EPOCH FROM (closed_at - created_at))) AS avg_resolution_time
+              FROM issues
+              WHERE closed_at IS NOT NULL
+              GROUP BY type;`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	resolutionTime := make(map[string]string)
+	for rows.Next() {
+		var issueType string
+		var avgTime float64
+		if err := rows.Scan(&issueType, &avgTime); err != nil {
+			return nil, err
+		}
+
+		days := int(avgTime) / 86400
+		hours := (int(avgTime) % 86400) / 3600
+		resolutionTime[issueType] = fmt.Sprintf("%dd %dh", days, hours)
+	}
+
+	return resolutionTime, nil
+}
+
+func (db *DB) GetEngineerPerformance() (map[string]int, error) {
+	query := `SELECT assigned_to AS engineer, COUNT(*) AS issues_resolved
+              FROM issues
+              WHERE status = 'CLOSED' AND assigned_to IS NOT NULL
+              GROUP BY assigned_to;`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	engineerPerformance := make(map[string]int)
+	for rows.Next() {
+		var engineer string
+		var issuesResolved int
+		if err := rows.Scan(&engineer, &issuesResolved); err != nil {
+			return nil, err
+		}
+		engineerPerformance[engineer] = issuesResolved
+	}
+
+	return engineerPerformance, nil
+}
+
+// GetIssueAnalytics retrieves aggregated statistics for issues within a specified time range.
+func (db *DB) GetIssueAnalytics(startDate, endDate string) (map[string]interface{}, error) {
+	query := `
+		SELECT 
+			COUNT(*) AS total_issues,
+			(SELECT jsonb_object_agg(type, count) 
+			 FROM (SELECT type, COUNT(*) AS count FROM issues WHERE ($1::date IS NULL OR created_at >= $1) 
+			       AND ($2::date IS NULL OR created_at <= $2) GROUP BY type) AS t) AS issues_by_type,
+			(SELECT jsonb_object_agg(status, count) 
+			 FROM (SELECT status, COUNT(*) AS count FROM issues WHERE ($1::date IS NULL OR created_at >= $1) 
+			       AND ($2::date IS NULL OR created_at <= $2) GROUP BY status) AS s) AS issues_by_status,
+			(SELECT jsonb_object_agg(to_char(created_at, 'YYYY-MM'), count)
+			 FROM (SELECT to_char(created_at, 'YYYY-MM') AS month, COUNT(*) AS count 
+			       FROM issues WHERE ($1::date IS NULL OR created_at >= $1) 
+			       AND ($2::date IS NULL OR created_at <= $2) GROUP BY month) AS m) 
+			AS issues_by_month
+		FROM issues
+		WHERE ($1::date IS NULL OR created_at >= $1) 
+		  AND ($2::date IS NULL OR created_at <= $2);
+	`
+
+	row := db.QueryRow(query, startDate, endDate)
+
+	var totalIssues int
+	var issuesByType, issuesByStatus, issuesByMonth map[string]int
+
+	err := row.Scan(&totalIssues, &issuesByType, &issuesByStatus, &issuesByMonth)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching analytics: %v", err)
+	}
+
+	return map[string]interface{}{
+		"total_issues":     totalIssues,
+		"issues_by_type":   issuesByType,
+		"issues_by_status": issuesByStatus,
+		"issues_by_month":  issuesByMonth,
+	}, nil
 }
