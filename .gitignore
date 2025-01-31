@@ -112,4 +112,4 @@ fabric.properties
 /.idea/sqldialects.xml
 /idea/
 
-dataSources.xml
+/.idea/dataSources.xml
