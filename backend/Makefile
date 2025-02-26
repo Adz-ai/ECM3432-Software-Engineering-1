@@ -1,4 +1,4 @@
-.PHONY: build run test clean swagger migrate-up migrate-down install-tools
+.PHONY: build run test clean swagger migrate-up migrate-down install-tools coverage
 
 
 ifneq (,$(wildcard ./.env))
@@ -24,6 +24,14 @@ run:
 
 test:
 	$(GOTEST) -v ./...
+
+coverage:
+	go test -coverprofile=coverage.out ./... && \
+	go tool cover -html=coverage.out -o coverage.html && \
+	go tool cover -func=coverage.out | grep -vE 'mocks|migrations|config|docs|logging|postgres|main' | tee coverage_summary.txt && \
+	AVG_COV=$$(go tool cover -func=coverage.out | grep total | awk '{print $$3}'); \
+	echo "📊 Coverage report generated! Open coverage.html in your browser." && \
+	echo "📈 Average Project Coverage: $${AVG_COV}"
 
 clean:
 	rm -f $(BINARY_NAME)

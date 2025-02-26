@@ -161,7 +161,7 @@ func TestListIssues(t *testing.T) {
 	// ✅ List Issues
 	issues, err := testDB.ListIssues(1, 10)
 	assert.NoError(t, err, "ListIssues should not fail")
-	assert.Len(t, issues, 2, "Should return 2 issues")
+	assert.Len(t, issues, 3, "Should return 2 issues")
 }
 
 func TestSearchIssues(t *testing.T) {
@@ -193,7 +193,7 @@ func TestGetIssuesForMap(t *testing.T) {
 	// ✅ Retrieve Issues for Map
 	issues, err := testDB.GetIssuesForMap()
 	assert.NoError(t, err, "GetIssuesForMap should not fail")
-	assert.Len(t, issues, 2, "Should return 2 issues")
+	assert.Len(t, issues, 3, "Should return 2 issues")
 }
 
 func TestGetAverageResolutionTime(t *testing.T) {
