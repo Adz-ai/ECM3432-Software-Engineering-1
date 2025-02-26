@@ -11,6 +11,27 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+//go:generate mockgen -source=auth.go -destination=mocks/mock_auth.go -package=mocks
+
+// Authenticator defines authentication behavior for testing
+type Authenticator interface {
+	AuthMiddleware() gin.HandlerFunc
+	StaffOnly() gin.HandlerFunc
+}
+
+// RealAuth implements Authenticator with real authentication logic
+type RealAuth struct{}
+
+// AuthMiddleware validates JWT
+func (r *RealAuth) AuthMiddleware() gin.HandlerFunc {
+	return AuthMiddleware()
+}
+
+// StaffOnly ensures only staff users can access
+func (r *RealAuth) StaffOnly() gin.HandlerFunc {
+	return StaffOnly()
+}
+
 var secretKey = []byte(os.Getenv("JWT_SECRET"))
 
 type UserClaims struct {

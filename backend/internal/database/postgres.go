@@ -11,7 +11,7 @@ type DB struct {
 	*sql.DB
 }
 
-func InitDB() (*DB, error) {
+func InitDB() (DatabaseOperations, error) {
 	connStr := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		os.Getenv("DB_HOST"),
@@ -38,3 +38,5 @@ func InitDB() (*DB, error) {
 
 	return &DB{db}, nil
 }
+
+var _ DatabaseOperations = (*DB)(nil)

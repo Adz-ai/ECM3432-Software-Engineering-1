@@ -13,10 +13,10 @@ import (
 )
 
 type Handler struct {
-	db *database.DB
+	db database.DatabaseOperations
 }
 
-func NewHandler(db *database.DB) *Handler {
+func NewHandler(db database.DatabaseOperations) *Handler {
 	return &Handler{db: db}
 }
 
@@ -70,6 +70,13 @@ func (h *Handler) CreateIssue(c *gin.Context) {
 // @Security Bearer
 // @Router /issues/{id} [put]
 func (h *Handler) UpdateIssue(c *gin.Context) {
+	// Staff authorization check
+	userType, _ := c.Get("userType")
+	if userType != "staff" {
+		utils.RespondWithError(c, http.StatusForbidden, "Staff access required", nil)
+		return
+	}
+
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid ID", err)
@@ -84,13 +91,6 @@ func (h *Handler) UpdateIssue(c *gin.Context) {
 
 	if update.Status != nil && !models.ValidateIssueStatus(*update.Status) {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid issue status", nil)
-		return
-	}
-
-	// Staff authorization check
-	userType, _ := c.Get("userType")
-	if userType != "staff" {
-		utils.RespondWithError(c, http.StatusForbidden, "Staff access required", nil)
 		return
 	}
 
@@ -252,7 +252,7 @@ func (h *Handler) SearchIssues(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Failure 403 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Security BearerAuth
+// @Security Bearer
 // @Router /issues/analytics [get]
 func (h *Handler) GetIssueAnalytics(c *gin.Context) {
 	// Ensure only staff can access

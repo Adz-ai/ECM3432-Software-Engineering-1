@@ -1,7 +1,6 @@
 package database
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/golang-migrate/migrate/v4"
@@ -9,8 +8,14 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-func RunMigrations(db *sql.DB) error {
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
+func RunMigrations(db DatabaseOperations) error {
+	// Extract the real *sql.DB from DatabaseOperations
+	dbInstance, ok := db.(*DB)
+	if !ok {
+		return fmt.Errorf("invalid database instance, expected *database.DB")
+	}
+
+	driver, err := postgres.WithInstance(dbInstance.DB, &postgres.Config{})
 	if err != nil {
 		return fmt.Errorf("could not create postgres driver: %v", err)
 	}

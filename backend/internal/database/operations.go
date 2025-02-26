@@ -8,6 +8,24 @@ import (
 	"log"
 )
 
+//go:generate mockgen -source=operations.go -destination=mocks/mock_operations.go -package=mocks
+
+type DatabaseOperations interface {
+	CreateIssue(issue *models.IssueCreate) (int64, error)
+	UpdateIssue(id int64, update *models.IssueUpdate) error
+	GetIssue(id int64) (*models.Issue, error)
+	ListIssues(page, pageSize int) ([]*models.Issue, error)
+	GetIssuesForMap() ([]*models.Issue, error)
+	SearchIssues(issueType, status string) ([]*models.Issue, error)
+	GetIssueAnalytics(startDate, endDate string) (map[string]interface{}, error)
+	GetAverageResolutionTime() (map[string]string, error)
+	GetEngineerPerformance() (map[string]int, error)
+	GetUserByUsername(username string) (*models.User, error)
+	CreateUser(username, passwordHash, userType string) error
+}
+
+var _ DatabaseOperations = (*DB)(nil)
+
 func (db *DB) CreateIssue(issue *models.IssueCreate) (int64, error) {
 	var id int64
 	err := db.QueryRow(`
