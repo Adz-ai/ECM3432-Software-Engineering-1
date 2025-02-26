@@ -1,4 +1,4 @@
-.PHONY: build run test clean swagger migrate-up migrate-down
+.PHONY: build run test clean swagger migrate-up migrate-down install-tools
 
 
 ifneq (,$(wildcard ./.env))
