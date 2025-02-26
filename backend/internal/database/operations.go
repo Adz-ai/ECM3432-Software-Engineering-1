@@ -3,6 +3,7 @@ package database
 import (
 	"chalkstone.council/internal/models"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"github.com/lib/pq"
 	"log"
@@ -242,11 +243,13 @@ func (db *DB) GetUserByUsername(username string) (*models.User, error) {
 }
 
 func (db *DB) GetAverageResolutionTime() (map[string]string, error) {
-	query := `SELECT type, 
-                     AVG(EXTRACT(EPOCH FROM (closed_at - created_at))) AS avg_resolution_time
-              FROM issues
-              WHERE closed_at IS NOT NULL
-              GROUP BY type;`
+	query := `
+		SELECT type, 
+		       COALESCE(AVG(EXTRACT(EPOCH FROM (closed_at - created_at))), 0) AS avg_resolution_time
+		FROM issues
+		WHERE closed_at IS NOT NULL
+		GROUP BY type;
+	`
 
 	rows, err := db.Query(query)
 	if err != nil {
@@ -260,6 +263,10 @@ func (db *DB) GetAverageResolutionTime() (map[string]string, error) {
 		var avgTime float64
 		if err := rows.Scan(&issueType, &avgTime); err != nil {
 			return nil, err
+		}
+
+		if avgTime < 0 {
+			avgTime = 0
 		}
 
 		days := int(avgTime) / 86400
@@ -297,33 +304,76 @@ func (db *DB) GetEngineerPerformance() (map[string]int, error) {
 
 // GetIssueAnalytics retrieves aggregated statistics for issues within a specified time range.
 func (db *DB) GetIssueAnalytics(startDate, endDate string) (map[string]interface{}, error) {
+	var start, end interface{}
+	if startDate == "" {
+		start = nil
+	} else {
+		start = startDate
+	}
+	if endDate == "" {
+		end = nil
+	} else {
+		end = endDate
+	}
+
 	query := `
 		SELECT 
 			COUNT(*) AS total_issues,
 			(SELECT jsonb_object_agg(type, count) 
-			 FROM (SELECT type, COUNT(*) AS count FROM issues WHERE ($1::date IS NULL OR created_at >= $1) 
-			       AND ($2::date IS NULL OR created_at <= $2) GROUP BY type) AS t) AS issues_by_type,
+			 FROM (SELECT type, COUNT(*) AS count FROM issues 
+			       WHERE ($1::date IS NULL OR created_at >= $1::date) 
+			       AND ($2::date IS NULL OR created_at <= $2::date) 
+			       GROUP BY type) AS t) AS issues_by_type,
 			(SELECT jsonb_object_agg(status, count) 
-			 FROM (SELECT status, COUNT(*) AS count FROM issues WHERE ($1::date IS NULL OR created_at >= $1) 
-			       AND ($2::date IS NULL OR created_at <= $2) GROUP BY status) AS s) AS issues_by_status,
-			(SELECT jsonb_object_agg(to_char(created_at, 'YYYY-MM'), count)
+			 FROM (SELECT status, COUNT(*) AS count FROM issues 
+			       WHERE ($1::date IS NULL OR created_at >= $1::date) 
+			       AND ($2::date IS NULL OR created_at <= $2::date) 
+			       GROUP BY status) AS s) AS issues_by_status,
+			(SELECT jsonb_object_agg(month, count) 
 			 FROM (SELECT to_char(created_at, 'YYYY-MM') AS month, COUNT(*) AS count 
-			       FROM issues WHERE ($1::date IS NULL OR created_at >= $1) 
-			       AND ($2::date IS NULL OR created_at <= $2) GROUP BY month) AS m) 
+			       FROM issues 
+			       WHERE ($1::date IS NULL OR created_at >= $1::date) 
+			       AND ($2::date IS NULL OR created_at <= $2::date) 
+			       GROUP BY to_char(created_at, 'YYYY-MM')) AS m) 
 			AS issues_by_month
 		FROM issues
-		WHERE ($1::date IS NULL OR created_at >= $1) 
-		  AND ($2::date IS NULL OR created_at <= $2);
+		WHERE ($1::date IS NULL OR created_at >= $1::date) 
+		  AND ($2::date IS NULL OR created_at <= $2::date);
 	`
 
-	row := db.QueryRow(query, startDate, endDate)
-
 	var totalIssues int
-	var issuesByType, issuesByStatus, issuesByMonth map[string]int
+	var issuesByTypeJSON, issuesByStatusJSON, issuesByMonthJSON []byte
 
-	err := row.Scan(&totalIssues, &issuesByType, &issuesByStatus, &issuesByMonth)
+	err := db.QueryRow(query, start, end).Scan(
+		&totalIssues,
+		&issuesByTypeJSON,
+		&issuesByStatusJSON,
+		&issuesByMonthJSON,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching analytics: %v", err)
+	}
+
+	issuesByType := make(map[string]int)
+	issuesByStatus := make(map[string]int)
+	issuesByMonth := make(map[string]int)
+
+	if issuesByTypeJSON != nil {
+		if err := json.Unmarshal(issuesByTypeJSON, &issuesByType); err != nil {
+			return nil, fmt.Errorf("error unmarshaling issues_by_type: %v", err)
+		}
+	}
+
+	if issuesByStatusJSON != nil {
+		if err := json.Unmarshal(issuesByStatusJSON, &issuesByStatus); err != nil {
+			return nil, fmt.Errorf("error unmarshaling issues_by_status: %v", err)
+		}
+	}
+
+	if issuesByMonthJSON != nil {
+		if err := json.Unmarshal(issuesByMonthJSON, &issuesByMonth); err != nil {
+			return nil, fmt.Errorf("error unmarshaling issues_by_month: %v", err)
+		}
 	}
 
 	return map[string]interface{}{
