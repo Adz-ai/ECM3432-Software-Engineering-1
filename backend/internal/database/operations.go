@@ -79,7 +79,7 @@ func (db *DB) GetIssue(id int64) (*models.Issue, error) {
 
 func (db *DB) GetIssuesForMap() ([]*models.Issue, error) {
 	rows, err := db.Query(`
-		SELECT type, latitude, longitude, status
+		SELECT id, type, latitude, longitude, status
 		FROM issues`)
 	if err != nil {
 		return nil, err
@@ -95,6 +95,7 @@ func (db *DB) GetIssuesForMap() ([]*models.Issue, error) {
 	for rows.Next() {
 		var issue models.Issue
 		err := rows.Scan(
+			&issue.ID,
 			&issue.Type,
 			&issue.Location.Latitude,
 			&issue.Location.Longitude,

@@ -185,7 +185,7 @@ func (h *Handler) ListIssues(c *gin.Context) {
 // @Description Retrieve issue locations and types for the map view
 // @Tags issues
 // @Produce json
-// @Success 200 {array} object{type=string,location=object{latitude=float64,longitude=float64},status=string}
+// @Success 200 {array} object{id=int64,type=string,location=object{latitude=float64,longitude=float64},status=string}
 // @Failure 500 {object} map[string]string
 // @Router /issues/map [get]
 func (h *Handler) GetIssuesForMap(c *gin.Context) {
@@ -198,6 +198,7 @@ func (h *Handler) GetIssuesForMap(c *gin.Context) {
 	mapIssues := make([]map[string]interface{}, len(issues))
 	for i, issue := range issues {
 		mapIssues[i] = map[string]interface{}{
+			"id":   issue.ID,
 			"type": issue.Type,
 			"location": map[string]float64{
 				"latitude":  issue.Location.Latitude,

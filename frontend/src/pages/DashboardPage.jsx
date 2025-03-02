@@ -9,6 +9,68 @@ import IssueStatusChart from '../components/dashboard/IssueStatusChart';
 import TimelineChart from '../components/dashboard/TimelineChart';
 import StaffPerformance from '../components/dashboard/StaffPerformance';
 
+// Helper function to convert API response to the format expected by chart components
+const transformAnalyticsData = (apiResponse) => {
+  console.log('Transforming API response:', apiResponse);
+
+  // Handle empty or null responses
+  if (!apiResponse) {
+    return {
+      totalIssues: 0,
+      resolvedIssues: 0,
+      pendingIssues: 0,
+      avgResolutionTime: 'N/A',
+      issuesByType: [],
+      issuesByStatus: [],
+      issuesTimeline: [],
+      staffPerformance: []
+    };
+  }
+
+  // Transform issues_by_type from {TYPE: count} to [{type: TYPE, count: count}]
+  const issuesByType = Object.entries(apiResponse.issues_by_type || {}).map(([type, count]) => ({
+    type,
+    count
+  }));
+
+  // Transform issues_by_status from {STATUS: count} to [{status: STATUS, count: count}]
+  const issuesByStatus = Object.entries(apiResponse.issues_by_status || {}).map(([status, count]) => ({
+    status,
+    count
+  }));
+
+  // Transform issues_by_month from {MONTH: count} to [{date: MONTH, reported: count, resolved: 0}]
+  const issuesTimeline = Object.entries(apiResponse.issues_by_month || {}).map(([date, count]) => ({
+    date,
+    reported: count,
+    resolved: 0 // No resolved data available in API response
+  }));
+
+  // Transform engineer_performance (if it exists)
+  const staffPerformance = Object.entries(apiResponse.engineer_performance || {}).map(([staffName, data]) => ({
+    staffName,
+    assigned: data.assigned || 0,
+    resolved: data.resolved || 0
+  }));
+
+  // Calculate resolved and pending issues
+  const totalIssues = apiResponse.total_issues || 0;
+  const resolvedCount =
+    (apiResponse.issues_by_status && apiResponse.issues_by_status.RESOLVED) || 0 +
+    (apiResponse.issues_by_status && apiResponse.issues_by_status.CLOSED) || 0;
+
+  return {
+    totalIssues: totalIssues,
+    resolvedIssues: resolvedCount,
+    pendingIssues: totalIssues - resolvedCount,
+    avgResolutionTime: apiResponse.average_resolution_time || 'N/A',
+    issuesByType,
+    issuesByStatus,
+    issuesTimeline,
+    staffPerformance
+  };
+};
+
 const DashboardPage = () => {
   const { currentUser, isStaff } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -22,9 +84,7 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // IMPORTANT: Hooks must be called at the top level, not conditionally
   useEffect(() => {
-    // Only fetch data if user is logged in and is staff
     if (currentUser && isStaff()) {
       const fetchDashboardData = async () => {
         try {
@@ -39,19 +99,44 @@ const DashboardPage = () => {
           setDateRange({ startDate, endDate });
 
           // Fetch analytics data
-          const analyticsResponse = await analyticsService.getIssueAnalytics(
-            startDate,
-            endDate
-          );
+          try {
+            const analyticsResponse = await analyticsService.getIssueAnalytics(
+              startDate,
+              endDate
+            );
+            console.log('Analytics API response:', analyticsResponse.data);
+
+            // Transform the API response to the format expected by the dashboard
+            const transformedData = transformAnalyticsData(analyticsResponse.data);
+            console.log('Transformed analytics data:', transformedData);
+
+            setAnalytics(transformedData);
+          } catch (analyticsError) {
+            console.error('Error fetching analytics:', analyticsError);
+            setAnalytics(transformAnalyticsData(null));
+          }
 
           // Fetch recent issues
-          const issuesResponse = await issuesService.getAllIssues(1, 10);
+          try {
+            const issuesResponse = await issuesService.getAllIssues(1, 10);
+            console.log('Issues API response:', issuesResponse.data);
 
-          setAnalytics(analyticsResponse.data);
-          setIssues(issuesResponse.data);
+            // Ensure we have an array of issues
+            if (Array.isArray(issuesResponse.data)) {
+              setIssues(issuesResponse.data);
+            } else if (issuesResponse.data && Array.isArray(issuesResponse.data.data)) {
+              setIssues(issuesResponse.data.data);
+            } else {
+              console.warn('Unexpected issues response format:', issuesResponse.data);
+              setIssues([]);
+            }
+          } catch (issuesError) {
+            console.error('Error fetching issues:', issuesError);
+            setIssues([]);
+          }
         } catch (err) {
+          console.error('Dashboard error:', err);
           setError('Failed to load dashboard data');
-          console.error(err);
         } finally {
           setLoading(false);
         }
@@ -74,7 +159,10 @@ const DashboardPage = () => {
           newDateRange.startDate,
           newDateRange.endDate
         );
-        setAnalytics(response.data);
+
+        // Transform the API response
+        const transformedData = transformAnalyticsData(response.data);
+        setAnalytics(transformedData);
       } catch (err) {
         setError('Failed to update analytics data');
         console.error(err);
@@ -145,7 +233,8 @@ const DashboardPage = () => {
 
         <div className="summary-card">
           <h3>Avg. Resolution Time</h3>
-          <p className="summary-value">{analytics?.avgResolutionTime || 'N/A'}</p>
+          <p className="summary-value">{typeof analytics?.avgResolutionTime === 'string' ?
+            analytics.avgResolutionTime : 'N/A'}</p>
         </div>
       </div>
 
@@ -170,13 +259,21 @@ const DashboardPage = () => {
 
       <div className="dashboard-section">
         <h2>Staff Performance</h2>
-        <StaffPerformance data={analytics?.staffPerformance || []} />
+        {analytics?.staffPerformance && analytics.staffPerformance.length > 0 ? (
+          <StaffPerformance data={analytics.staffPerformance} />
+        ) : (
+          <div className="no-data-message">No staff performance data available</div>
+        )}
       </div>
 
       <div className="dashboard-section">
         <h2>Recent Issues</h2>
-        <table className="issues-table">
-          <thead>
+
+        {!Array.isArray(issues) || issues.length === 0 ? (
+          <div className="no-data-message">No issues found</div>
+        ) : (
+          <table className="issues-table">
+            <thead>
             <tr>
               <th>ID</th>
               <th>Type</th>
@@ -186,29 +283,45 @@ const DashboardPage = () => {
               <th>Created At</th>
               <th>Actions</th>
             </tr>
-          </thead>
-          <tbody>
+            </thead>
+            <tbody>
             {issues.map((issue) => (
-              <tr key={issue.id}>
-                <td>{issue.id}</td>
-                <td>{issue.type.replace('_', ' ')}</td>
-                <td>{issue.status}</td>
-                <td>{issue.reported_by}</td>
+              <tr key={issue.id || `issue-${Math.random()}`}>
+                <td>{issue.id || 'N/A'}</td>
+                <td>{(issue.type && typeof issue.type === 'string' ?
+                  issue.type.replace(/_/g, ' ') : 'N/A')}</td>
+                <td>{issue.status || 'N/A'}</td>
+                <td>{issue.reported_by || 'N/A'}</td>
                 <td>{issue.assigned_to || 'Unassigned'}</td>
-                <td>{new Date(issue.created_at).toLocaleDateString()}</td>
+                <td>{issue.created_at ?
+                  new Date(issue.created_at).toLocaleDateString() : 'N/A'}</td>
                 <td>
                   <button
                     className="btn-view"
                     onClick={() => navigate(`/issues/${issue.id}`)}
+                    disabled={!issue.id}
                   >
                     View
                   </button>
                 </td>
               </tr>
             ))}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        )}
       </div>
+
+      <style jsx>{`
+        .no-data-message {
+          background-color: #f8f9fa;
+          border: 1px solid #dee2e6;
+          border-radius: 4px;
+          padding: 2rem;
+          text-align: center;
+          color: #6c757d;
+          font-style: italic;
+        }
+      `}</style>
     </div>
   );
 };

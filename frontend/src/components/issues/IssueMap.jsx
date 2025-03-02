@@ -1,3 +1,5 @@
+// src/components/issues/IssueMap.jsx
+
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
@@ -69,10 +71,18 @@ const IssueMap = () => {
       try {
         setLoading(true);
         const response = await issuesService.getMapIssues();
-        setIssues(response.data);
+        console.log('Map issues response:', response.data);
+
+        // Ensure we have an array of issues with IDs
+        if (Array.isArray(response.data)) {
+          setIssues(response.data);
+        } else {
+          console.warn('Unexpected map issues response format:', response.data);
+          setIssues([]);
+        }
       } catch (err) {
         setError('Failed to load issues for the map');
-        console.error(err);
+        console.error('Error fetching map issues:', err);
       } finally {
         setLoading(false);
       }
@@ -82,11 +92,22 @@ const IssueMap = () => {
   }, []);
 
   const handleViewDetails = (issueId) => {
-    navigate(`/issues/${issueId}`);
+    console.log('Navigating to issue details with ID:', issueId);
+
+    // Only navigate if we have a valid ID
+    if (issueId) {
+      navigate(`/issues/${issueId}`);
+    } else {
+      console.error('Attempted to navigate to issue details with undefined ID');
+    }
   };
 
   const getMarkerIcon = (issueType) => {
     return issueIcons[issueType] || new L.Icon.Default();
+  };
+
+  const formatIssueType = (type) => {
+    return type ? type.replace(/_/g, ' ') : 'Unknown';
   };
 
   if (loading) {
@@ -109,27 +130,81 @@ const IssueMap = () => {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
 
-        {issues.map((issue, index) => (
-          <Marker
-            key={index}
-            position={[issue.location.latitude, issue.location.longitude]}
-            icon={getMarkerIcon(issue.type)}
-          >
-            <Popup>
-              <div className="issue-popup">
-                <h3>{issue.type.replace('_', ' ')}</h3>
-                <IssueStatusBadge status={issue.status} />
-                <button
-                  className="view-details-btn"
-                  onClick={() => handleViewDetails(issue.id)}
-                >
-                  View Details
-                </button>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        {issues.length === 0 && (
+          <div className="no-issues-overlay">No issues reported in this area</div>
+        )}
+
+        {issues.map((issue, index) => {
+          // Skip markers with invalid location data
+          if (!issue.location || !issue.location.latitude || !issue.location.longitude) {
+            console.warn('Issue missing valid location data:', issue);
+            return null;
+          }
+
+          return (
+            <Marker
+              key={issue.id || `marker-${index}`}
+              position={[issue.location.latitude, issue.location.longitude]}
+              icon={getMarkerIcon(issue.type)}
+            >
+              <Popup>
+                <div className="issue-popup">
+                  <h3>{formatIssueType(issue.type)}</h3>
+                  {issue.status && <IssueStatusBadge status={issue.status} />}
+                  {issue.id ? (
+                    <button
+                      className="view-details-btn"
+                      onClick={() => handleViewDetails(issue.id)}
+                    >
+                      View Details
+                    </button>
+                  ) : (
+                    <p className="error-message">Cannot view details (missing ID)</p>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
+
+      <style jsx>{`
+        .no-issues-overlay {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background-color: rgba(255, 255, 255, 0.8);
+          padding: 1rem;
+          border-radius: 4px;
+          z-index: 1000;
+          text-align: center;
+          font-weight: bold;
+        }
+
+        .issue-popup h3 {
+          margin-top: 0;
+          margin-bottom: 0.5rem;
+        }
+
+        .view-details-btn {
+          display: block;
+          width: 100%;
+          padding: 0.5rem;
+          margin-top: 0.5rem;
+          background-color: var(--primary-color);
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+
+        .error-message {
+          color: #dc3545;
+          font-size: 0.875rem;
+          margin-top: 0.5rem;
+        }
+      `}</style>
     </div>
   );
 };
