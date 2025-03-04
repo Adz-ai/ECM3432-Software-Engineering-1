@@ -45,16 +45,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	defer func(db *database.DB) {
-		err := db.Close()
-		if err != nil {
-			log.Fatalf("Failed to close database: %v", err)
-		}
-	}(db)
 
-	if err := database.RunMigrations(db.DB); err != nil {
+	if err := database.RunMigrations(db); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
+
+	defer func() {
+		if dbInstance, ok := db.(*database.DB); ok {
+			if err := dbInstance.Close(); err != nil {
+				log.Fatalf("Failed to close database: %v", err)
+			}
+		}
+	}()
 
 	r := gin.Default()
 
@@ -66,7 +68,7 @@ func main() {
 	r.Use(middleware.Logging())
 	r.Use(middleware.RateLimit(middleware.NewIPRateLimiter(2, 5))) // 2 requests per second, burst of 5
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:8080"},
+		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -74,8 +76,11 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	// Setup routes
-	api.SetupRoutes(r, db)
+	// Create an instance of RealAuth
+	auth := &middleware.RealAuth{}
+
+	// Setup routes with injected authentication middleware
+	api.SetupRoutes(r, db, auth)
 
 	log.Printf("Server starting on port %s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {

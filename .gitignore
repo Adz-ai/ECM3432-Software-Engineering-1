@@ -112,3 +112,10 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 /.idea/sqldialects.xml
 /idea/
+
+/.idea/dataSources.xml
+
+
+coverage.html
+coverage.out
+coverage_summary.txt

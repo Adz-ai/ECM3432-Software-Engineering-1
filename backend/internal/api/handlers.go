@@ -4,6 +4,7 @@ import (
 	"chalkstone.council/internal/database"
 	"chalkstone.council/internal/middleware"
 	"chalkstone.council/internal/models"
+	"chalkstone.council/internal/storage"
 	"chalkstone.council/internal/utils"
 	"log"
 	"net/http"
@@ -13,48 +14,109 @@ import (
 )
 
 type Handler struct {
-	db *database.DB
+	db database.DatabaseOperations
 }
 
-func NewHandler(db *database.DB) *Handler {
+func NewHandler(db database.DatabaseOperations) *Handler {
 	return &Handler{db: db}
 }
 
 // @Summary Create new issue
-// @Description Create a new issue report
+// @Description Create a new issue report with optional images
 // @Tags issues
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
-// @Param issue body models.IssueCreate true "Issue details"
+// @Param type formData string true "Issue type"
+// @Param description formData string true "Issue description"
+// @Param latitude formData number true "Latitude of the issue location"
+// @Param longitude formData number true "Longitude of the issue location"
+// @Param images formData file false "Images of the issue (multiple allowed)"
 // @Success 201 {object} map[string]int64
 // @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
 // @Security Bearer
 // @Router /issues [post]
 func (h *Handler) CreateIssue(c *gin.Context) {
-	// Authenticate user
-	_, exists := c.Get("userID")
+	reportedBy, exists := c.Get("userID")
 	if !exists {
 		utils.RespondWithError(c, http.StatusUnauthorized, "Unauthorized access", nil)
 		return
 	}
 
-	var issue models.IssueCreate
-	if err := c.ShouldBindJSON(&issue); err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, err.Error(), err)
+	// Parse multipart form (handle file uploads)
+	err := c.Request.ParseMultipartForm(10 << 20) // 10MB limit
+	if err != nil {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid form data", err)
 		return
 	}
 
-	if !models.ValidateIssueType(issue.Type) {
+	// Extract form fields
+	issueType := c.PostForm("type")
+	description := c.PostForm("description")
+	latitude, latErr := strconv.ParseFloat(c.PostForm("latitude"), 64)
+	longitude, lonErr := strconv.ParseFloat(c.PostForm("longitude"), 64)
+
+	if issueType == "" || description == "" || latErr != nil || lonErr != nil {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid issue data", nil)
+		return
+	}
+
+	// Validate issue type
+	if !models.ValidateIssueType(models.IssueType(issueType)) {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid issue type", nil)
 		return
 	}
 
+	// Process images (if provided)
+	var imageURLs []string
+	if c.Request.MultipartForm != nil {
+		files := c.Request.MultipartForm.File["images"]
+		for _, fileHeader := range files {
+			file, err := fileHeader.Open()
+			if err != nil {
+				utils.RespondWithError(c, http.StatusInternalServerError, "Failed to open image file", err)
+				return
+			}
+			defer file.Close()
+
+			// Upload image to MinIO (or other storage service)
+			imageURL, err := storage.UploadImage(file, fileHeader.Filename)
+			if err != nil {
+				utils.RespondWithError(c, http.StatusInternalServerError, "Failed to upload image", err)
+				return
+			}
+
+			imageURLs = append(imageURLs, imageURL)
+		}
+	}
+
+	// Create issue object
+	issue := models.IssueCreate{
+		Type:        models.IssueType(issueType),
+		Description: description,
+		Location: struct {
+			Latitude  float64 `json:"latitude" binding:"required"`
+			Longitude float64 `json:"longitude" binding:"required"`
+		}(struct {
+			Latitude  float64 `json:"latitude"`
+			Longitude float64 `json:"longitude"`
+		}{
+			Latitude:  latitude,
+			Longitude: longitude,
+		}),
+		Images:     imageURLs,           // Stores empty array if no images are uploaded
+		ReportedBy: reportedBy.(string), // Replace with real authenticated user
+	}
+
+	// Store issue in DB
 	id, err := h.db.CreateIssue(&issue)
 	if err != nil {
 		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to create issue", err)
 		return
 	}
 
+	// Success response
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 
@@ -70,6 +132,13 @@ func (h *Handler) CreateIssue(c *gin.Context) {
 // @Security Bearer
 // @Router /issues/{id} [put]
 func (h *Handler) UpdateIssue(c *gin.Context) {
+	// Staff authorization check
+	userType, _ := c.Get("userType")
+	if userType != "staff" {
+		utils.RespondWithError(c, http.StatusForbidden, "Staff access required", nil)
+		return
+	}
+
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid ID", err)
@@ -84,13 +153,6 @@ func (h *Handler) UpdateIssue(c *gin.Context) {
 
 	if update.Status != nil && !models.ValidateIssueStatus(*update.Status) {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid issue status", nil)
-		return
-	}
-
-	// Staff authorization check
-	userType, _ := c.Get("userType")
-	if userType != "staff" {
-		utils.RespondWithError(c, http.StatusForbidden, "Staff access required", nil)
 		return
 	}
 
@@ -185,7 +247,7 @@ func (h *Handler) ListIssues(c *gin.Context) {
 // @Description Retrieve issue locations and types for the map view
 // @Tags issues
 // @Produce json
-// @Success 200 {array} object{type=string,location=object{latitude=float64,longitude=float64},status=string}
+// @Success 200 {array} object{id=int64,type=string,location=object{latitude=float64,longitude=float64},status=string}
 // @Failure 500 {object} map[string]string
 // @Router /issues/map [get]
 func (h *Handler) GetIssuesForMap(c *gin.Context) {
@@ -198,6 +260,7 @@ func (h *Handler) GetIssuesForMap(c *gin.Context) {
 	mapIssues := make([]map[string]interface{}, len(issues))
 	for i, issue := range issues {
 		mapIssues[i] = map[string]interface{}{
+			"id":   issue.ID,
 			"type": issue.Type,
 			"location": map[string]float64{
 				"latitude":  issue.Location.Latitude,
@@ -241,6 +304,52 @@ func (h *Handler) SearchIssues(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, issues)
+}
+
+// @Summary Get issue analytics
+// @Description Retrieve aggregated statistics for issues within a specified time range
+// @Tags issues
+// @Produce json
+// @Param startDate query string false "Start date (YYYY-MM-DD)"
+// @Param endDate query string false "End date (YYYY-MM-DD)"
+// @Success 200 {object} map[string]interface{}
+// @Failure 403 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Security Bearer
+// @Router /issues/analytics [get]
+func (h *Handler) GetIssueAnalytics(c *gin.Context) {
+	// Ensure only staff can access
+	userType, _ := c.Get("userType")
+	if userType != "staff" {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Staff access required"})
+		return
+	}
+
+	startDate := c.Query("startDate")
+	endDate := c.Query("endDate")
+
+	stats, err := h.db.GetIssueAnalytics(startDate, endDate)
+	if err != nil {
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to retrieve analytics", err)
+		return
+	}
+
+	resolutionTime, err := h.db.GetAverageResolutionTime()
+	if err != nil {
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to retrieve resolution time analytics", err)
+		return
+	}
+
+	engineerPerformance, err := h.db.GetEngineerPerformance()
+	if err != nil {
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to retrieve engineer performance", err)
+		return
+	}
+
+	stats["average_resolution_time"] = resolutionTime
+	stats["engineer_performance"] = engineerPerformance
+
+	c.JSON(http.StatusOK, stats)
 }
 
 // @Summary User login
