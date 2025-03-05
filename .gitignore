@@ -119,3 +119,6 @@ fabric.properties
 coverage.html
 coverage.out
 coverage_summary.txt
+
+
+/frontend/node_modules/
