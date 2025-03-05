@@ -40,7 +40,7 @@ chalkstone-council-app/
 
 1. Clone the repository:
    ```
-   git clone https://github.com/your-username/chalkstone-council-app.git
+   git clone https://github.com/Adz-ai/chalkstone-council-app.git
    cd chalkstone-council-app
    ```
 
