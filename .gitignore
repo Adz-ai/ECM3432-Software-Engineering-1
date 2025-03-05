@@ -122,3 +122,4 @@ coverage_summary.txt
 
 
 /frontend/node_modules/
+.DS_Store
