@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"github.com/spf13/viper"
 )
 
@@ -29,6 +30,15 @@ func LoadConfig() (Config, error) {
 	if err := viper.Unmarshal(&config); err != nil {
 		return config, err
 	}
+
+	// log out config
+	fmt.Printf("DB_HOST: %s\n", config.DBHost)
+	fmt.Printf("DB_PORT: %s\n", config.DBPort)
+	fmt.Printf("DB_USER: %s\n", config.DBUser)
+	fmt.Printf("DB_PASSWORD: %s\n", config.DBPassword)
+	fmt.Printf("DB_NAME: %s\n", config.DBName)
+	fmt.Printf("JWT_SECRET: %s\n", config.JWTSecret)
+	fmt.Printf("PORT: %s\n", config.Port)
 
 	return config, nil
 }

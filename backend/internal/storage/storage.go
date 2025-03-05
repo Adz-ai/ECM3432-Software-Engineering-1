@@ -6,6 +6,7 @@ import (
 	"log"
 	"mime/multipart"
 	"os"
+	"strings"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -34,6 +35,11 @@ func UploadImage(file multipart.File, fileName string) (string, error) {
 	if err != nil {
 		log.Println("Failed to upload image:", err)
 		return "", err
+	}
+
+	// Adding this due to Docker Container Issue
+	if strings.Contains(endpoint, "minio") {
+		endpoint = "localhost:9000"
 	}
 
 	imageURL := fmt.Sprintf("http://%s/%s/%s", endpoint, bucketName, fileName)

@@ -1,43 +1,27 @@
-# Build stage
-FROM golang:1.19-alpine AS builder
+FROM golang:1.23-alpine
 
-# Install necessary build tools
+# Install build tools and dependencies
 RUN apk add --no-cache make git
 
 # Set working directory
 WORKDIR /app
 
-# Copy go.mod and go.sum files
-COPY go.mod go.sum ./
-
-# Download dependencies
-RUN go mod download
-
-# Copy the source code
+# Copy the entire codebase
 COPY . .
 
-# Build the application
-RUN make build
+# Remove the .env file
+RUN rm .env
 
-# Final stage
-FROM alpine:3.16
+RUN make docker-env-file
 
-# Install necessary runtime dependencies
-RUN apk add --no-cache ca-certificates tzdata
+# Install build tools
+RUN make install-tools
 
-# Set working directory
-WORKDIR /app
+# Generate Swagger docs and build the application
+RUN make swagger && make build
 
-# Copy the binary from the builder stage
-COPY --from=builder /app/bin/chalkstone-api .
-
-# Copy any necessary files
-COPY --from=builder /app/config ./config
-COPY --from=builder /app/migrations ./migrations
-COPY --from=builder /app/swagger ./swagger
-
-# Expose the port
+# Expose the API port
 EXPOSE 8080
 
-# Run the application
-CMD ["./chalkstone-api"]
+# Start the server
+CMD ["make", "run"]
