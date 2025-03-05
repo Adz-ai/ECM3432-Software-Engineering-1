@@ -23,8 +23,9 @@ This project consists of two main components:
 chalkstone-council-system/
 ├── frontend/                 # React frontend application
 ├── backend/                  # Go (Golang) API server
-├── docs/                     # Documentation files
-└── README.md                 # This file
+├── docker-compose.yml        # Docker Compose configuration
+├── README.md                 # Project documentation
+└── DOCKER_DEPLOYMENT.md     # Docker deployment instructions
 ```
 
 ## 💻 Technologies Used
@@ -124,6 +125,10 @@ npm start
 
 The frontend will be available at http://localhost:3000.
 
+## 🚀 Docker-Compose Deployment Instructions
+
+To deploy the Chalkstone Council Issue Reporting System using Docker Compose, follow the documentation in the [Docker Deployment Instructions](DOCKER_DEPLOYMENT.md) file.
+
 ## 📱 Using the Application
 
 ### Public User Features
@@ -216,7 +221,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 3. Commit your changes: `git commit -m 'Add some feature'`
 4. Push to the branch: `git push origin feature-name`
 5. Submit a pull request
-
-## 👥 Team
-
-- Adarssh - Developer
