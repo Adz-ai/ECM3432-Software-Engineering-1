@@ -123,3 +123,4 @@ coverage_summary.txt
 
 /frontend/node_modules/
 .DS_Store
+.idea/ECM3432-Software-Engineering-1.iml
