@@ -1,9 +1,8 @@
 // src/components/issues/IssueForm.jsx
 
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { issuesService } from '../../services/api';
-import { AuthContext } from '../../contexts/AuthContext';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -27,7 +26,6 @@ const LocationMarker = ({ position, setPosition }) => {
 };
 
 const IssueForm = () => {
-  const { currentUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
