@@ -73,7 +73,6 @@ const createMockApi = (api) => {
       { status: ISSUE_STATUSES.NEW, count: 9 },
       { status: ISSUE_STATUSES.IN_PROGRESS, count: 32 },
       { status: ISSUE_STATUSES.RESOLVED, count: 35 },
-      { status: ISSUE_STATUSES.CLOSED, count: 52 },
     ],
     issuesTimeline: [
       { date: '2025-01', reported: 22, resolved: 18 },

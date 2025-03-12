@@ -178,7 +178,7 @@ To deploy the Chalkstone Council Issue Reporting System using Docker Compose, fo
 - All public user features
 - Access to analytics dashboard
 - View and manage all reported issues
-- Update issue status (New, In Progress, Resolved, Closed)
+- Update issue status (New, In Progress, Resolved)
 - Assign issues to staff members
 
 ## 🌐 API Endpoints

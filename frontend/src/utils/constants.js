@@ -28,21 +28,18 @@ export const ISSUE_STATUSES = {
   NEW: 'NEW',
   IN_PROGRESS: 'IN_PROGRESS',
   RESOLVED: 'RESOLVED',
-  CLOSED: 'CLOSED',
 };
 
 export const ISSUE_STATUS_LABELS = {
   [ISSUE_STATUSES.NEW]: 'New',
   [ISSUE_STATUSES.IN_PROGRESS]: 'In Progress',
   [ISSUE_STATUSES.RESOLVED]: 'Resolved',
-  [ISSUE_STATUSES.CLOSED]: 'Closed',
 };
 
 export const ISSUE_STATUS_COLORS = {
   [ISSUE_STATUSES.NEW]: '#17a2b8', // info
   [ISSUE_STATUSES.IN_PROGRESS]: '#ffc107', // warning
-  [ISSUE_STATUSES.RESOLVED]: '#28a745', // success
-  [ISSUE_STATUSES.CLOSED]: '#6c757d', // secondary
+  [ISSUE_STATUSES.RESOLVED]: '#28a745', // success secondary
 };
 
 // Map settings

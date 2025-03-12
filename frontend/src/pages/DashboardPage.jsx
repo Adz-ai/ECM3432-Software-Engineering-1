@@ -107,8 +107,7 @@ const transformAnalyticsData = (apiResponse) => {
   // Calculate resolved and pending issues
   const totalIssues = apiResponse.total_issues || 0;
   const resolvedCount =
-    (apiResponse.issues_by_status && apiResponse.issues_by_status.RESOLVED) || 0 +
-    (apiResponse.issues_by_status && apiResponse.issues_by_status.CLOSED) || 0;
+    (apiResponse.issues_by_status && apiResponse.issues_by_status.RESOLVED);
 
   return {
     totalIssues: totalIssues,
@@ -752,9 +751,6 @@ const DashboardPage = () => {
                             } : issue.status === 'PENDING' ? {
                               bgcolor: alpha(theme.palette.warning.main, 0.1),
                               color: theme.palette.warning.dark
-                            } : issue.status === 'CLOSED' ? {
-                              bgcolor: alpha(theme.palette.info.main, 0.1),
-                              color: theme.palette.info.dark
                             } : {
                               bgcolor: alpha(theme.palette.grey[500], 0.1),
                               color: theme.palette.grey[700]
