@@ -37,14 +37,14 @@ import {
   PhotoCamera as CameraIcon
 } from '@mui/icons-material';
 
-// Import icons for issue types
+// Import icons for issue types - matching exactly with HomePage
 import { 
-  Construction as PotholeIcon, 
-  Lightbulb as StreetLightIcon,
+  Build as PotholeIcon, 
+  WbIncandescent as StreetLightIcon,
   Brush as GraffitiIcon, 
-  Report as AntiSocialIcon,
+  NoiseAware as AntiSocialIcon,
   Delete as FlyTippingIcon,
-  WaterDrop as BlockedDrainIcon
+  Water as BlockedDrainIcon
 } from '@mui/icons-material';
 
 // Define reusable motion components

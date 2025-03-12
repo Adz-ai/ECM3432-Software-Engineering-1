@@ -9,14 +9,14 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { renderToString } from 'react-dom/server';
 
-// Import Material UI icons
+// Import Material UI icons - using the same icons as in the HomePage
 import { 
-  Construction as PotholeIcon, 
-  Lightbulb as StreetLightIcon,
+  Build as PotholeIcon, 
+  WbIncandescent as StreetLightIcon,
   Brush as GraffitiIcon, 
-  Report as AntiSocialIcon,
+  NoiseAware as AntiSocialIcon,
   Delete as FlyTippingIcon,
-  WaterDrop as BlockedDrainIcon
+  Water as BlockedDrainIcon
 } from '@mui/icons-material';
 
 // Fix for marker icons in React-Leaflet
@@ -30,7 +30,18 @@ L.Icon.Default.mergeOptions({
 // Create Material UI Icon Markers
 const createMaterialIconMarker = (IconComponent, color) => {
   const iconHtml = renderToString(
-    <div style={{ color, background: 'white', borderRadius: '50%', padding: '4px', boxShadow: '0 2px 5px rgba(0,0,0,0.3)' }}>
+    <div style={{ 
+      color, 
+      background: 'white', 
+      borderRadius: '50%', 
+      padding: '6px',
+      boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '36px',
+      height: '36px'
+    }}>
       <IconComponent style={{ fontSize: '24px' }} />
     </div>
   );
