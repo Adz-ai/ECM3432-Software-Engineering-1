@@ -561,7 +561,7 @@ const DashboardPage = () => {
               <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
                 Issues by Type
               </Typography>
-              <Box sx={{ height: 350, width: '100%', maxWidth: '100%' }}>
+              <Box sx={{ height: 450, width: '100%', maxWidth: '100%' }}>
                 <IssueTypeChart data={analytics?.issuesByType || []} />
               </Box>
             </CardContent>
@@ -582,7 +582,7 @@ const DashboardPage = () => {
               <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
                 Issues by Status
               </Typography>
-              <Box sx={{ height: 350, width: '100%', maxWidth: '100%' }}>
+              <Box sx={{ height: 450, width: '100%', maxWidth: '100%' }}>
                 <IssueStatusChart data={analytics?.issuesByStatus || []} />
               </Box>
             </CardContent>

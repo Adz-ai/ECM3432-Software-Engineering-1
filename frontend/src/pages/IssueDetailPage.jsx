@@ -19,7 +19,7 @@ import {
   Grid,
   Paper,
   Typography,
-  TextField,
+  // TextField,
   MenuItem,
   Select,
   FormControl,
@@ -29,7 +29,7 @@ import {
   IconButton,
   Chip,
   useTheme,
-  useMediaQuery
+  // useMediaQuery
 } from '@mui/material';
 
 // Icons
@@ -40,7 +40,7 @@ import UpdateIcon from '@mui/icons-material/Update';
 import PersonIcon from '@mui/icons-material/Person';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
-import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
+// import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
@@ -54,8 +54,8 @@ const IssueDetailPage = () => {
   const { id } = useParams();
   const { isStaff } = useContext(AuthContext);
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  // const theme = useTheme();
+  // const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const [issue, setIssue] = useState(null);
   const [loading, setLoading] = useState(true);

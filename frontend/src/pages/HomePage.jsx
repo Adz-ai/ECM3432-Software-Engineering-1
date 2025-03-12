@@ -12,9 +12,7 @@ import {
   Card,
   CardContent,
   Container,
-  Divider,
   Grid,
-  Link,
   Paper,
   Stack,
   Typography,
@@ -34,7 +32,7 @@ import BrushIcon from '@mui/icons-material/Brush';
 import NoiseAwareIcon from '@mui/icons-material/NoiseAware';
 import DeleteIcon from '@mui/icons-material/Delete';
 import WaterIcon from '@mui/icons-material/Water';
-import InfoIcon from '@mui/icons-material/Info';
+// import InfoIcon from '@mui/icons-material/Info';
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 import PublicIcon from '@mui/icons-material/Public';
 
@@ -49,7 +47,7 @@ const MotionContainer = motion(Container);
 const HomePage = () => {
   const { currentUser } = useContext(AuthContext);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  // const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Debug log to check authentication state
   useEffect(() => {
@@ -139,9 +137,8 @@ const HomePage = () => {
       icon: <TrackChangesIcon />, 
       title: 'Track Progress', 
       description: 'Follow the status of your reported issues and see when they\'re resolved.',
-      link: '/about',
-      linkText: 'How It Works',
-      link: '/about#how-it-works'
+      link: '/about#how-it-works',
+      linkText: 'How It Works'
     },
     { 
       icon: <PublicIcon />, 

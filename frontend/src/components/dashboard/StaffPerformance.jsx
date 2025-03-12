@@ -31,7 +31,7 @@ const IssueTypePieChart = ({ data, title }) => {
     <Card sx={{ height: '100%' }}>
       <CardContent>
         <Typography variant="h6" gutterBottom>{title}</Typography>
-        <Box sx={{ height: 200, display: 'flex', justifyContent: 'center' }}>
+        <Box sx={{ height: 280, display: 'flex', justifyContent: 'center' }}>
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>

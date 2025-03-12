@@ -8,6 +8,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import ScrollToTop from './components/common/ScrollToTop';
 
 // Material UI
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -149,6 +150,7 @@ function App() {
                 minHeight: '100vh',
                 bgcolor: 'background.default',
               }}>
+                <ScrollToTop />
                 <Header />
                 <Container component="main" sx={{ 
                   flexGrow: 1, 

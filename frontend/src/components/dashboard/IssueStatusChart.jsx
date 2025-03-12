@@ -11,7 +11,7 @@ const IssueStatusChart = ({ data }) => {
   }));
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={400}>
       <BarChart
         data={chartData}
         margin={{
