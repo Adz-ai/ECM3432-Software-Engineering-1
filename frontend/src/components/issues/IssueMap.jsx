@@ -7,6 +7,17 @@ import { issuesService } from '../../services/api';
 import IssueStatusBadge from './IssueStatusBadge';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { renderToString } from 'react-dom/server';
+
+// Import Material UI icons
+import { 
+  Construction as PotholeIcon, 
+  Lightbulb as StreetLightIcon,
+  Brush as GraffitiIcon, 
+  Report as AntiSocialIcon,
+  Delete as FlyTippingIcon,
+  WaterDrop as BlockedDrainIcon
+} from '@mui/icons-material';
 
 // Fix for marker icons in React-Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -16,44 +27,31 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
+// Create Material UI Icon Markers
+const createMaterialIconMarker = (IconComponent, color) => {
+  const iconHtml = renderToString(
+    <div style={{ color, background: 'white', borderRadius: '50%', padding: '4px', boxShadow: '0 2px 5px rgba(0,0,0,0.3)' }}>
+      <IconComponent style={{ fontSize: '24px' }} />
+    </div>
+  );
+  
+  return L.divIcon({
+    html: iconHtml,
+    className: 'material-icon-marker',
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+    popupAnchor: [0, -18]
+  });
+};
+
 // Custom marker icons for different issue types
 const issueIcons = {
-  POTHOLE: new L.Icon({
-    iconUrl: '/assets/markers/pothole.png',
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
-  }),
-  STREET_LIGHT: new L.Icon({
-    iconUrl: '/assets/markers/street_light.png',
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
-  }),
-  GRAFFITI: new L.Icon({
-    iconUrl: '/assets/markers/graffiti.png',
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
-  }),
-  ANTI_SOCIAL: new L.Icon({
-    iconUrl: '/assets/markers/anti_social.png',
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
-  }),
-  FLY_TIPPING: new L.Icon({
-    iconUrl: '/assets/markers/fly_tipping.png',
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
-  }),
-  BLOCKED_DRAIN: new L.Icon({
-    iconUrl: '/assets/markers/blocked_drain.png',
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
-  }),
+  POTHOLE: createMaterialIconMarker(PotholeIcon, '#ff5722'),
+  STREET_LIGHT: createMaterialIconMarker(StreetLightIcon, '#ffc107'),
+  GRAFFITI: createMaterialIconMarker(GraffitiIcon, '#9c27b0'),
+  ANTI_SOCIAL: createMaterialIconMarker(AntiSocialIcon, '#f44336'),
+  FLY_TIPPING: createMaterialIconMarker(FlyTippingIcon, '#4caf50'),
+  BLOCKED_DRAIN: createMaterialIconMarker(BlockedDrainIcon, '#2196f3'),
 };
 
 const IssueMap = () => {

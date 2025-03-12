@@ -22,7 +22,7 @@ const AboutPage = () => {
         </p>
       </section>
 
-      <section className="about-section">
+      <section className="about-section" id="how-it-works">
         <h2>How It Works</h2>
         <div className="process-steps">
           <div className="process-step">

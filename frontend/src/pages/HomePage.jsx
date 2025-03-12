@@ -140,7 +140,8 @@ const HomePage = () => {
       title: 'Track Progress', 
       description: 'Follow the status of your reported issues and see when they\'re resolved.',
       link: '/about',
-      linkText: 'How It Works'
+      linkText: 'How It Works',
+      link: '/about#how-it-works'
     },
     { 
       icon: <PublicIcon />, 
