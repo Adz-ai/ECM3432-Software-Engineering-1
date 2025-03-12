@@ -138,6 +138,18 @@ export const issuesService = {
 export const analyticsService = {
   getIssueAnalytics: (startDate, endDate) =>
       api.get(`/issues/analytics?startDate=${startDate || ''}&endDate=${endDate || ''}`),
+  
+  getEngineerPerformance: () =>
+      api.get('/analytics/engineers'),
+      
+  getResolutionTime: () =>
+      api.get('/analytics/resolution-time'),
+};
+
+// Engineers services
+export const engineersService = {
+  getAllEngineers: () => api.get('/engineers'),
+  getEngineerById: (id) => api.get(`/engineers/${id}`),
 };
 
 export default api;

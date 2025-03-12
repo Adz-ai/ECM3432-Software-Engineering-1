@@ -1,12 +1,14 @@
 package database
 
 import (
-	"chalkstone.council/internal/models"
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/lib/pq"
 	"log"
+	"math"
+
+	"chalkstone.council/internal/models"
+	"github.com/lib/pq"
 )
 
 //go:generate mockgen -source=operations.go -destination=mocks/mock_operations.go -package=mocks
@@ -20,9 +22,11 @@ type DatabaseOperations interface {
 	SearchIssues(issueType, status string) ([]*models.Issue, error)
 	GetIssueAnalytics(startDate, endDate string) (map[string]interface{}, error)
 	GetAverageResolutionTime() (map[string]string, error)
-	GetEngineerPerformance() (map[string]interface{}, error)
+	GetEngineerPerformance() ([]*models.EngineerPerformance, error)
 	GetUserByUsername(username string) (*models.User, error)
 	CreateUser(username, passwordHash, userType string) error
+	ListEngineers() ([]*models.Engineer, error)
+	GetEngineerByID(id int64) (*models.Engineer, error)
 }
 
 var _ DatabaseOperations = (*DB)(nil)
@@ -300,25 +304,11 @@ func (db *DB) GetAverageResolutionTime() (map[string]string, error) {
 	return resolutionTime, nil
 }
 
-func (db *DB) GetEngineerPerformance() (map[string]interface{}, error) {
-	// Define our engineering team - in a real application, this might come from a database or config
-	engineers := []string{"John Smith", "Emma Johnson", "Michael Chen", "Sarah Williams", "David Garcia"}
-
-	// Query for completed issues per engineer
+func (db *DB) ListEngineers() ([]*models.Engineer, error) {
 	query := `
-		SELECT 
-			assigned_to AS engineer, 
-			COUNT(*) AS issues_resolved,
-			AVG(EXTRACT(EPOCH FROM (updated_at - created_at))) AS avg_resolution_time,
-			COUNT(CASE WHEN type = 'POTHOLE' THEN 1 END) AS pothole_count,
-			COUNT(CASE WHEN type = 'STREET_LIGHT' THEN 1 END) AS streetlight_count,
-			COUNT(CASE WHEN type = 'GRAFFITI' THEN 1 END) AS graffiti_count,
-			COUNT(CASE WHEN type = 'ANTI_SOCIAL' THEN 1 END) AS antisocial_count,
-			COUNT(CASE WHEN type = 'FLY_TIPPING' THEN 1 END) AS flytipping_count,
-			COUNT(CASE WHEN type = 'BLOCKED_DRAIN' THEN 1 END) AS blockeddrain_count
-		FROM issues
-		WHERE status = 'RESOLVED' AND assigned_to IS NOT NULL
-		GROUP BY assigned_to;
+		SELECT id, name, email, phone, specialization, join_date, created_at, updated_at
+		FROM engineers
+		ORDER BY name ASC;
 	`
 
 	rows, err := db.Query(query)
@@ -327,87 +317,241 @@ func (db *DB) GetEngineerPerformance() (map[string]interface{}, error) {
 	}
 	defer rows.Close()
 
-	// Create a performance map for each engineer
-	engineersMap := make(map[string]interface{})
-
-	// Initialize the map with all engineers, even those without resolved issues
-	for _, engineer := range engineers {
-		engineersMap[engineer] = map[string]interface{}{
-			"issues_resolved": 0,
-			"avg_resolution_time": "0d 0h",
-			"avg_resolution_seconds": 0.0,
-			"issue_types": map[string]int{
-				"POTHOLE": 0,
-				"STREET_LIGHT": 0,
-				"GRAFFITI": 0,
-				"ANTI_SOCIAL": 0,
-				"FLY_TIPPING": 0,
-				"BLOCKED_DRAIN": 0,
-			},
-		}
-	}
-
-	// Fill in data for engineers with resolved issues
+	var engineers []*models.Engineer
 	for rows.Next() {
-		var engineer string
-		var issuesResolved int
-		var avgResolutionTime float64
-		var potholeCount, streetlightCount, graffitiCount int
-		var antisocialCount, flytippingCount, blockeddrainCount int
-
-		if err := rows.Scan(
-			&engineer, 
-			&issuesResolved, 
-			&avgResolutionTime,
-			&potholeCount,
-			&streetlightCount,
-			&graffitiCount,
-			&antisocialCount,
-			&flytippingCount,
-			&blockeddrainCount,
-		); err != nil {
+		engineer := &models.Engineer{}
+		err := rows.Scan(
+			&engineer.ID,
+			&engineer.Name,
+			&engineer.Email,
+			&engineer.Phone,
+			&engineer.Specialization,
+			&engineer.JoinDate,
+			&engineer.CreatedAt,
+			&engineer.UpdatedAt,
+		)
+		if err != nil {
 			return nil, err
 		}
+		engineers = append(engineers, engineer)
+	}
 
-		// Only include engineers in our predefined list
-		found := false
-		for _, validEngineer := range engineers {
-			if validEngineer == engineer {
-				found = true
-				break
-			}
+	return engineers, nil
+}
+
+func (db *DB) GetEngineerByID(id int64) (*models.Engineer, error) {
+	query := `
+		SELECT id, name, email, phone, specialization, join_date, created_at, updated_at
+		FROM engineers
+		WHERE id = $1;
+	`
+
+	engineer := &models.Engineer{}
+	err := db.QueryRow(query, id).Scan(
+		&engineer.ID,
+		&engineer.Name,
+		&engineer.Email,
+		&engineer.Phone,
+		&engineer.Specialization,
+		&engineer.JoinDate,
+		&engineer.CreatedAt,
+		&engineer.UpdatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // Return nil, nil if no engineer found
 		}
+		return nil, err
+	}
 
-		// Skip if not in our engineer list
-		if !found {
+	return engineer, nil
+}
+
+func (db *DB) GetEngineerPerformance() ([]*models.EngineerPerformance, error) {
+	// First, get all engineers
+	engineers, err := db.ListEngineers()
+	if err != nil {
+		return nil, fmt.Errorf("error getting engineers: %w", err)
+	}
+
+	// Query for both completed and assigned issues per engineer
+	query := `
+		SELECT 
+			e.id,
+			-- Resolved issues
+			COUNT(CASE WHEN i.status = 'RESOLVED' THEN 1 END) AS issues_resolved,
+			AVG(EXTRACT(EPOCH FROM (i.resolved_at - i.created_at))) AS avg_resolution_time,
+			-- Resolved issues by type
+			COUNT(CASE WHEN i.status = 'RESOLVED' AND i.type = 'POTHOLE' THEN 1 END) AS pothole_resolved,
+			COUNT(CASE WHEN i.status = 'RESOLVED' AND i.type = 'STREET_LIGHT' THEN 1 END) AS streetlight_resolved,
+			COUNT(CASE WHEN i.status = 'RESOLVED' AND i.type = 'GRAFFITI' THEN 1 END) AS graffiti_resolved,
+			COUNT(CASE WHEN i.status = 'RESOLVED' AND i.type = 'ANTI_SOCIAL' THEN 1 END) AS antisocial_resolved,
+			COUNT(CASE WHEN i.status = 'RESOLVED' AND i.type = 'FLY_TIPPING' THEN 1 END) AS flytipping_resolved,
+			COUNT(CASE WHEN i.status = 'RESOLVED' AND i.type = 'BLOCKED_DRAIN' THEN 1 END) AS blockeddrain_resolved,
+			-- Currently assigned issues
+			COUNT(CASE WHEN i.status != 'RESOLVED' THEN 1 END) AS issues_assigned,
+			-- Currently assigned issues by type
+			COUNT(CASE WHEN i.status != 'RESOLVED' AND i.type = 'POTHOLE' THEN 1 END) AS pothole_assigned,
+			COUNT(CASE WHEN i.status != 'RESOLVED' AND i.type = 'STREET_LIGHT' THEN 1 END) AS streetlight_assigned,
+			COUNT(CASE WHEN i.status != 'RESOLVED' AND i.type = 'GRAFFITI' THEN 1 END) AS graffiti_assigned,
+			COUNT(CASE WHEN i.status != 'RESOLVED' AND i.type = 'ANTI_SOCIAL' THEN 1 END) AS antisocial_assigned,
+			COUNT(CASE WHEN i.status != 'RESOLVED' AND i.type = 'FLY_TIPPING' THEN 1 END) AS flytipping_assigned,
+			COUNT(CASE WHEN i.status != 'RESOLVED' AND i.type = 'BLOCKED_DRAIN' THEN 1 END) AS blockeddrain_assigned
+		FROM engineers e
+		LEFT JOIN issues i ON e.id = i.assigned_to
+		GROUP BY e.id
+		ORDER BY issues_resolved DESC;
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Create a map to look up engineers by ID
+	engineerMap := make(map[int64]*models.Engineer)
+	for _, e := range engineers {
+		engineerMap[e.ID] = e
+	}
+
+	// Process the results
+	results := []*models.EngineerPerformance{}
+
+	for rows.Next() {
+		var engineerID int64
+		// Resolved issues
+		var issuesResolved int
+		// Use sql.NullFloat64 to handle NULL values
+		var avgResolutionTimeNullable sql.NullFloat64
+		var potholeResolved, streetlightResolved, graffitiResolved int
+		var antisocialResolved, flytippingResolved, blockeddrainResolved int
+		// Assigned issues
+		var issuesAssigned int
+		var potholeAssigned, streetlightAssigned, graffitiAssigned int
+		var antisocialAssigned, flytippingAssigned, blockeddrainAssigned int
+
+		if err := rows.Scan(
+			&engineerID,
+			// Resolved issues
+			&issuesResolved,
+			&avgResolutionTimeNullable,
+			&potholeResolved,
+			&streetlightResolved,
+			&graffitiResolved,
+			&antisocialResolved,
+			&flytippingResolved,
+			&blockeddrainResolved,
+			// Assigned issues
+			&issuesAssigned,
+			&potholeAssigned,
+			&streetlightAssigned,
+			&graffitiAssigned,
+			&antisocialAssigned,
+			&flytippingAssigned,
+			&blockeddrainAssigned,
+		); err != nil {
+			log.Printf("Error scanning row: %v", err)
+			// Continue with the next row rather than failing the entire operation
 			continue
 		}
-
-		if avgResolutionTime < 0 {
+		
+		// Handle NULL values for avgResolutionTime
+		var avgResolutionTime float64
+		if avgResolutionTimeNullable.Valid {
+			avgResolutionTime = avgResolutionTimeNullable.Float64
+		} else {
 			avgResolutionTime = 0
 		}
 
+		// Look up the engineer
+		engineer, found := engineerMap[engineerID]
+		if !found {
+			log.Printf("Engineer with ID %d not found in engineer map, skipping", engineerID)
+			continue // Should never happen with our query, but just in case
+		}
+
+		// Ensure avgResolutionTime is a valid number
+		if avgResolutionTime < 0 || math.IsNaN(avgResolutionTime) || math.IsInf(avgResolutionTime, 0) {
+			log.Printf("Invalid avgResolutionTime value: %v, setting to 0", avgResolutionTime)
+			avgResolutionTime = 0
+		}
+
+		// Format resolution time
 		days := int(avgResolutionTime) / 86400
 		hours := (int(avgResolutionTime) % 86400) / 3600
 		avgTimeFormatted := fmt.Sprintf("%dd %dh", days, hours)
 
-		// Build the performance data for this engineer
-		engineersMap[engineer] = map[string]interface{}{
-			"issues_resolved": issuesResolved,
-			"avg_resolution_time": avgTimeFormatted,
-			"avg_resolution_seconds": avgResolutionTime,
-			"issue_types": map[string]int{
-				"POTHOLE": potholeCount,
-				"STREET_LIGHT": streetlightCount,
-				"GRAFFITI": graffitiCount,
-				"ANTI_SOCIAL": antisocialCount,
-				"FLY_TIPPING": flytippingCount,
-				"BLOCKED_DRAIN": blockeddrainCount,
+		// Calculate total issues (resolved + assigned)
+		totalIssues := issuesResolved + issuesAssigned
+
+		// Create performance data for this engineer
+		performance := &models.EngineerPerformance{
+			Engineer:             engineer,
+			IssuesResolved:       issuesResolved,
+			AvgResolutionTime:    avgTimeFormatted,
+			AvgResolutionSeconds: avgResolutionTime,
+			ResolvedIssuesByType: map[string]int{
+				"POTHOLE":       potholeResolved,
+				"STREET_LIGHT":  streetlightResolved,
+				"GRAFFITI":      graffitiResolved,
+				"ANTI_SOCIAL":   antisocialResolved,
+				"FLY_TIPPING":   flytippingResolved,
+				"BLOCKED_DRAIN": blockeddrainResolved,
 			},
+			IssuesAssigned:       issuesAssigned,
+			AssignedIssuesByType: map[string]int{
+				"POTHOLE":       potholeAssigned,
+				"STREET_LIGHT":  streetlightAssigned,
+				"GRAFFITI":      graffitiAssigned,
+				"ANTI_SOCIAL":   antisocialAssigned,
+				"FLY_TIPPING":   flytippingAssigned,
+				"BLOCKED_DRAIN": blockeddrainAssigned,
+			},
+			TotalIssues:          totalIssues,
+		}
+
+		results = append(results, performance)
+	}
+
+	// Check for any errors that occurred during iteration
+	if err = rows.Err(); err != nil {
+		log.Printf("Error iterating over rows: %v", err)
+		// Continue with what we have instead of failing completely
+	}
+
+	// If we got no results, create empty performance entries for each engineer
+	if len(results) == 0 {
+		for _, engineer := range engineers {
+			performance := &models.EngineerPerformance{
+				Engineer:             engineer,
+				IssuesResolved:       0,
+				AvgResolutionTime:    "0d 0h",
+				AvgResolutionSeconds: 0,
+				ResolvedIssuesByType: map[string]int{
+					"POTHOLE":       0,
+					"STREET_LIGHT":  0,
+					"GRAFFITI":      0,
+					"ANTI_SOCIAL":   0,
+					"FLY_TIPPING":   0,
+					"BLOCKED_DRAIN": 0,
+				},
+				IssuesAssigned:       0,
+				AssignedIssuesByType: map[string]int{
+					"POTHOLE":       0,
+					"STREET_LIGHT":  0,
+					"GRAFFITI":      0,
+					"ANTI_SOCIAL":   0,
+					"FLY_TIPPING":   0,
+					"BLOCKED_DRAIN": 0,
+				},
+				TotalIssues:          0,
+			}
+			results = append(results, performance)
 		}
 	}
 
-	return engineersMap, nil
+	return results, nil
 }
 
 // GetIssueAnalytics retrieves aggregated statistics for issues within a specified time range.

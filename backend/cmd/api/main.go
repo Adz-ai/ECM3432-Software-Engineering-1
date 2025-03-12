@@ -68,7 +68,7 @@ func main() {
 
 	// Middleware
 	r.Use(middleware.Logging())
-	r.Use(middleware.RateLimit(middleware.NewIPRateLimiter(2, 5))) // 2 requests per second, burst of 5
+	r.Use(middleware.RateLimit(middleware.NewIPRateLimiter(10, 20))) // 10 requests per second, burst of 20
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},

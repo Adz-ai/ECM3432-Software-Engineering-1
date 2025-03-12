@@ -1,16 +1,15 @@
 package api
 
 import (
+	"log"
+	"net/http"
+	"strconv"
+
 	"chalkstone.council/internal/database"
 	"chalkstone.council/internal/middleware"
 	"chalkstone.council/internal/models"
 	"chalkstone.council/internal/storage"
 	"chalkstone.council/internal/utils"
-	"encoding/json"
-	"fmt"
-	"log"
-	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -160,11 +159,15 @@ func (h *Handler) UpdateIssue(c *gin.Context) {
 	}
 
 	// Validate engineer assignment
-	if update.AssignedTo != nil && *update.AssignedTo != "" {
-		if !models.IsValidEngineer(*update.AssignedTo) {
-			engineersJSON, _ := json.Marshal(models.ValidEngineers)
-			message := fmt.Sprintf("Invalid engineer name. Must be one of: %s", string(engineersJSON))
-			utils.RespondWithError(c, http.StatusBadRequest, message, nil)
+	if update.AssignedTo != nil {
+		// Check if the engineer exists
+		engineer, err := h.db.GetEngineerByID(*update.AssignedTo)
+		if err != nil {
+			utils.RespondWithError(c, http.StatusInternalServerError, "Failed to validate engineer", err)
+			return
+		}
+		if engineer == nil {
+			utils.RespondWithError(c, http.StatusBadRequest, "Invalid engineer ID", nil)
 			return
 		}
 	}
@@ -284,6 +287,114 @@ func (h *Handler) GetIssuesForMap(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, mapIssues)
+}
+
+// @Summary List engineers
+// @Description Get a list of all engineers
+// @Tags engineers
+// @Produce json
+// @Success 200 {array} models.Engineer
+// @Security Bearer
+// @Router /engineers [get]
+func (h *Handler) ListEngineers(c *gin.Context) {
+	// Staff authorization check
+	userType, _ := c.Get("userType")
+	if userType != "staff" {
+		utils.RespondWithError(c, http.StatusForbidden, "Staff access required", nil)
+		return
+	}
+	engineers, err := h.db.ListEngineers()
+	if err != nil {
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to retrieve engineers", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, engineers)
+}
+
+// @Summary Get engineer by ID
+// @Description Get an engineer by their ID
+// @Tags engineers
+// @Produce json
+// @Param id path int true "Engineer ID"
+// @Success 200 {object} models.Engineer
+// @Failure 404 {object} map[string]string
+// @Security Bearer
+// @Router /engineers/{id} [get]
+func (h *Handler) GetEngineer(c *gin.Context) {
+	// Staff authorization check
+	userType, _ := c.Get("userType")
+	if userType != "staff" {
+		utils.RespondWithError(c, http.StatusForbidden, "Staff access required", nil)
+		return
+	}
+
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid engineer ID", err)
+		return
+	}
+
+	engineer, err := h.db.GetEngineerByID(id)
+	if err != nil {
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to retrieve engineer", err)
+		return
+	}
+
+	if engineer == nil {
+		utils.RespondWithError(c, http.StatusNotFound, "Engineer not found", nil)
+		return
+	}
+
+	c.JSON(http.StatusOK, engineer)
+}
+
+// @Summary Get engineer performance
+// @Description Get performance metrics for each engineer
+// @Tags analytics
+// @Produce json
+// @Success 200 {array} models.EngineerPerformance
+// @Security Bearer
+// @Router /analytics/engineers [get]
+func (h *Handler) EngineerPerformance(c *gin.Context) {
+	// Staff authorization check
+	userType, _ := c.Get("userType")
+	if userType != "staff" {
+		utils.RespondWithError(c, http.StatusForbidden, "Staff access required", nil)
+		return
+	}
+	performanceData, err := h.db.GetEngineerPerformance()
+	if err != nil {
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to retrieve engineer performance", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, performanceData)
+}
+
+// @Summary Get resolution time analytics
+// @Description Get average resolution time by issue type
+// @Tags analytics
+// @Produce json
+// @Success 200 {object} map[string]string
+// @Security Bearer
+// @Router /analytics/resolution-time [get]
+func (h *Handler) ResolutionTime(c *gin.Context) {
+	// Staff authorization check
+	userType, _ := c.Get("userType")
+	if userType != "staff" {
+		utils.RespondWithError(c, http.StatusForbidden, "Staff access required", nil)
+		return
+	}
+
+	resolutionTime, err := h.db.GetAverageResolutionTime()
+	if err != nil {
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to retrieve resolution time analytics", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, resolutionTime)
 }
 
 // @Summary Search issues

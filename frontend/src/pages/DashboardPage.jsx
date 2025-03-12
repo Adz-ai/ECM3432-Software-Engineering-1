@@ -116,6 +116,8 @@ const DashboardPage = () => {
 
   const [analytics, setAnalytics] = useState(null);
   const [issues, setIssues] = useState([]);
+  const [engineerData, setEngineerData] = useState([]);
+  const [resolutionTimeData, setResolutionTimeData] = useState(null);
   const [dateRange, setDateRange] = useState({
     startDate: '',
     endDate: '',
@@ -153,6 +155,38 @@ const DashboardPage = () => {
           } catch (analyticsError) {
             console.error('Error fetching analytics:', analyticsError);
             setAnalytics(transformAnalyticsData(null));
+          }
+
+          // Fetch engineer performance data
+          try {
+            const engineerResponse = await analyticsService.getEngineerPerformance();
+            console.log('Engineer performance response:', engineerResponse.data);
+            setEngineerData(engineerResponse.data || []);
+          } catch (engineerError) {
+            console.error('Error fetching engineer performance:', engineerError);
+            setEngineerData([]);
+          }
+
+          // Fetch resolution time data
+          try {
+            const resolutionTimeResponse = await analyticsService.getResolutionTime();
+            console.log('Resolution time response:', resolutionTimeResponse.data);
+            
+            // Store the resolution time data
+            if (resolutionTimeResponse.data) {
+              setResolutionTimeData(resolutionTimeResponse.data);
+              
+              // Update the analytics object with the overall resolution time as a string
+              if (typeof resolutionTimeResponse.data.OVERALL === 'string') {
+                setAnalytics(prev => ({
+                  ...prev,
+                  avgResolutionTime: resolutionTimeResponse.data.OVERALL
+                }));
+              }
+            }
+          } catch (resolutionTimeError) {
+            console.error('Error fetching resolution time:', resolutionTimeError);
+            setResolutionTimeData(null);
           }
 
           // Fetch recent issues
@@ -484,8 +518,8 @@ const DashboardPage = () => {
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>Avg. Resolution Time</Typography>
               </Box>
               <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                {typeof analytics?.avgResolutionTime === 'string' ?
-                  analytics.avgResolutionTime : 'N/A'}
+                {typeof analytics?.avgResolutionTime === 'string' ? analytics.avgResolutionTime : 
+                 (resolutionTimeData && typeof resolutionTimeData.OVERALL === 'string' ? resolutionTimeData.OVERALL : 'N/A')}
               </Typography>
             </CardContent>
           </MotionCard>
@@ -557,7 +591,7 @@ const DashboardPage = () => {
         </CardContent>
       </MotionCard>
 
-      {/* Staff Performance */}
+      {/* Engineer Performance */}
       <MotionCard 
         elevation={2}
         variants={fadeIn}
@@ -569,10 +603,10 @@ const DashboardPage = () => {
       >
         <CardContent>
           <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
-            Staff Performance
+            Engineer Performance
           </Typography>
-          {analytics?.staffPerformance && analytics.staffPerformance.length > 0 ? (
-            <StaffPerformance data={analytics.staffPerformance} />
+          {engineerData && engineerData.length > 0 ? (
+            <StaffPerformance data={engineerData} />
           ) : (
             <Box sx={{ 
               p: 4, 
@@ -581,7 +615,7 @@ const DashboardPage = () => {
               textAlign: 'center'
             }}>
               <Typography variant="body1" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                No staff performance data available
+                {loading ? 'Loading engineer data...' : 'No engineer performance data available'}
               </Typography>
             </Box>
           )}

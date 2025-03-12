@@ -66,25 +66,9 @@ type IssueCreate struct {
 	ReportedBy string   `json:"reported_by" binding:"required"`
 }
 
-// Valid engineers in the system
-var ValidEngineers = []string{
-	"John Smith",
-	"Emma Johnson",
-	"Michael Chen",
-	"Sarah Williams",
-	"David Garcia",
-}
-
-func IsValidEngineer(name string) bool {
-	for _, engineer := range ValidEngineers {
-		if engineer == name {
-			return true
-		}
-	}
-	return false
-}
+// Engineer functions moved to models/engineer.go
 
 type IssueUpdate struct {
 	Status     *IssueStatus `json:"status,omitempty"`
-	AssignedTo *string      `json:"assigned_to,omitempty"`
+	AssignedTo *int64       `json:"assigned_to,omitempty"`
 }

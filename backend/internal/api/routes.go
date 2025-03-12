@@ -42,4 +42,20 @@ func SetupRoutes(r *gin.Engine, db database.DatabaseOperations, auth middleware.
 		staff.GET("/search", handler.SearchIssues)
 		staff.GET("/analytics", handler.GetIssueAnalytics)
 	}
+
+	// Engineers endpoints
+	engineers := api.Group("/engineers")
+	engineers.Use(auth.AuthMiddleware())
+	{
+		engineers.GET("", handler.ListEngineers)
+		engineers.GET("/:id", handler.GetEngineer)
+	}
+
+	// Analytics endpoints
+	analytics := api.Group("/analytics")
+	analytics.Use(auth.AuthMiddleware(), auth.StaffOnly())
+	{
+		analytics.GET("/engineers", handler.EngineerPerformance)
+		analytics.GET("/resolution-time", handler.ResolutionTime)
+	}
 }

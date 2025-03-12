@@ -132,10 +132,10 @@ func TestUpdateIssue(t *testing.T) {
 	}
 
 	resolvedStatus := models.StatusResolved
-	assignedEngineer := "engineer42"
+	var assignedEngineerID int64 = 1 // Use engineer ID 1 instead of string name
 	update := &models.IssueUpdate{
 		Status:     &resolvedStatus,
-		AssignedTo: &assignedEngineer, // Ensure assignedTo is not nil
+		AssignedTo: &assignedEngineerID, // Ensure assignedTo is not nil
 	}
 
 	err = testDB.UpdateIssue(1, update)
@@ -145,7 +145,7 @@ func TestUpdateIssue(t *testing.T) {
 	updatedIssue, err := testDB.GetIssue(1)
 	assert.NoError(t, err)
 	assert.Equal(t, models.StatusResolved, updatedIssue.Status, "Issue should be marked as resolved")
-	assert.Equal(t, "engineer42", *updatedIssue.AssignedTo, "Engineer should be assigned")
+	assert.Equal(t, int64(1), *updatedIssue.AssignedTo, "Engineer ID should be assigned correctly")
 }
 
 func TestListIssues(t *testing.T) {
@@ -221,14 +221,31 @@ func TestGetEngineerPerformance(t *testing.T) {
 
 	setupTestData(t, testDB)
 
-	_, err = testDB.DB.Exec(`UPDATE issues SET assigned_to = 'engineer1' WHERE status = 'CLOSED'`)
+	// First create a test engineer
+	_, err = testDB.DB.Exec(`INSERT INTO engineers (id, name, email, phone, specialization, join_date) VALUES (1, 'Test Engineer', 'test@example.com', '123456789', 'General', NOW())`)
+	assert.NoError(t, err)
+
+	// Then assign engineer ID to closed issues
+	_, err = testDB.DB.Exec(`UPDATE issues SET assigned_to = 1 WHERE status = 'CLOSED'`)
 	assert.NoError(t, err)
 
 	performance, err := testDB.GetEngineerPerformance()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, performance)
 
-	assert.Equal(t, 1, performance["engineer1"], "Engineer should have closed 1 issue")
+	// Check that the performance data is a slice of EngineerPerformance
+	assert.NotNil(t, performance, "Performance data should not be nil")
+	assert.NotEmpty(t, performance, "Performance data should not be empty")
+	
+	// Look for our test engineer in the performance results
+	found := false
+	for _, engPerf := range performance {
+		if engPerf.Engineer.Name == "Test Engineer" {
+			found = true
+			assert.Equal(t, 1, engPerf.IssuesResolved, "Engineer should have resolved 1 issue")
+		}
+	}
+	assert.True(t, found, "Test Engineer should be in the performance data")
 }
 
 func TestGetIssueAnalytics(t *testing.T) {
