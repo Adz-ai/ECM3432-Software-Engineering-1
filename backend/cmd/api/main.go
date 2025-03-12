@@ -51,7 +51,9 @@ func main() {
 	}
 
 	defer func() {
-		if dbInstance, ok := db.(*database.DB); ok {
+		// Using type switch to avoid assertion issues with interface implementations
+		switch dbInstance := db.(type) {
+		case interface{ Close() error }:
 			if err := dbInstance.Close(); err != nil {
 				log.Fatalf("Failed to close database: %v", err)
 			}

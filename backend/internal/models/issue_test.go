@@ -16,7 +16,8 @@ func TestValidateIssueType(t *testing.T) {
 
 func TestValidateIssueStatus(t *testing.T) {
 	assert.True(t, ValidateIssueStatus(StatusNew))
-	assert.True(t, ValidateIssueStatus(StatusClosed))
+	assert.True(t, ValidateIssueStatus(StatusResolved))
+	assert.True(t, ValidateIssueStatus(StatusInProgress))
 	assert.False(t, ValidateIssueStatus("UNKNOWN"))
 }
 

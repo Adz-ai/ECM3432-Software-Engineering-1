@@ -10,7 +10,6 @@ const (
 	StatusNew        IssueStatus = "NEW"
 	StatusInProgress IssueStatus = "IN_PROGRESS"
 	StatusResolved   IssueStatus = "RESOLVED"
-	StatusClosed     IssueStatus = "CLOSED"
 )
 
 type IssueType string
@@ -34,7 +33,7 @@ func ValidateIssueType(t IssueType) bool {
 
 func ValidateIssueStatus(s IssueStatus) bool {
 	switch s {
-	case StatusNew, StatusInProgress, StatusResolved, StatusClosed:
+	case StatusNew, StatusInProgress, StatusResolved:
 		return true
 	}
 	return false
@@ -65,6 +64,24 @@ type IssueCreate struct {
 	} `json:"location" binding:"required"`
 	Images     []string `json:"images"`
 	ReportedBy string   `json:"reported_by" binding:"required"`
+}
+
+// Valid engineers in the system
+var ValidEngineers = []string{
+	"John Smith",
+	"Emma Johnson",
+	"Michael Chen",
+	"Sarah Williams",
+	"David Garcia",
+}
+
+func IsValidEngineer(name string) bool {
+	for _, engineer := range ValidEngineers {
+		if engineer == name {
+			return true
+		}
+	}
+	return false
 }
 
 type IssueUpdate struct {

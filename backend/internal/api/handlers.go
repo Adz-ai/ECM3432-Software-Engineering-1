@@ -6,6 +6,8 @@ import (
 	"chalkstone.council/internal/models"
 	"chalkstone.council/internal/storage"
 	"chalkstone.council/internal/utils"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -151,9 +153,20 @@ func (h *Handler) UpdateIssue(c *gin.Context) {
 		return
 	}
 
+	// Validate issue status
 	if update.Status != nil && !models.ValidateIssueStatus(*update.Status) {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid issue status", nil)
 		return
+	}
+
+	// Validate engineer assignment
+	if update.AssignedTo != nil && *update.AssignedTo != "" {
+		if !models.IsValidEngineer(*update.AssignedTo) {
+			engineersJSON, _ := json.Marshal(models.ValidEngineers)
+			message := fmt.Sprintf("Invalid engineer name. Must be one of: %s", string(engineersJSON))
+			utils.RespondWithError(c, http.StatusBadRequest, message, nil)
+			return
+		}
 	}
 
 	if err := h.db.UpdateIssue(id, &update); err != nil {
@@ -161,7 +174,7 @@ func (h *Handler) UpdateIssue(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, gin.H{"message": "Issue updated successfully"})
 }
 
 // @Summary Get issue by ID

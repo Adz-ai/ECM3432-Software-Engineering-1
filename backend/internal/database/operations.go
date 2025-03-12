@@ -20,7 +20,7 @@ type DatabaseOperations interface {
 	SearchIssues(issueType, status string) ([]*models.Issue, error)
 	GetIssueAnalytics(startDate, endDate string) (map[string]interface{}, error)
 	GetAverageResolutionTime() (map[string]string, error)
-	GetEngineerPerformance() (map[string]int, error)
+	GetEngineerPerformance() (map[string]interface{}, error)
 	GetUserByUsername(username string) (*models.User, error)
 	CreateUser(username, passwordHash, userType string) error
 }
@@ -244,15 +244,16 @@ func (db *DB) GetUserByUsername(username string) (*models.User, error) {
 }
 
 func (db *DB) GetAverageResolutionTime() (map[string]string, error) {
-	query := `
+	// Get per-type resolution times
+	typeQuery := `
 		SELECT type, 
-		       COALESCE(AVG(EXTRACT(EPOCH FROM (closed_at - created_at))), 0) AS avg_resolution_time
+		       COALESCE(AVG(EXTRACT(EPOCH FROM (updated_at - created_at))), 0) AS avg_resolution_time
 		FROM issues
-		WHERE closed_at IS NOT NULL
+		WHERE status = 'RESOLVED'
 		GROUP BY type;
 	`
 
-	rows, err := db.Query(query)
+	rows, err := db.Query(typeQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -275,14 +276,50 @@ func (db *DB) GetAverageResolutionTime() (map[string]string, error) {
 		resolutionTime[issueType] = fmt.Sprintf("%dd %dh", days, hours)
 	}
 
+	// Get overall average resolution time
+	overallQuery := `
+		SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (updated_at - created_at))), 0) AS overall_avg_resolution_time
+		FROM issues
+		WHERE status = 'RESOLVED';
+	`
+
+	var overallAvgTime float64
+	err = db.QueryRow(overallQuery).Scan(&overallAvgTime)
+	if err != nil {
+		return nil, err
+	}
+
+	if overallAvgTime < 0 {
+		overallAvgTime = 0
+	}
+
+	days := int(overallAvgTime) / 86400
+	hours := (int(overallAvgTime) % 86400) / 3600
+	resolutionTime["OVERALL"] = fmt.Sprintf("%dd %dh", days, hours)
+
 	return resolutionTime, nil
 }
 
-func (db *DB) GetEngineerPerformance() (map[string]int, error) {
-	query := `SELECT assigned_to AS engineer, COUNT(*) AS issues_resolved
-              FROM issues
-              WHERE status = 'CLOSED' AND assigned_to IS NOT NULL
-              GROUP BY assigned_to;`
+func (db *DB) GetEngineerPerformance() (map[string]interface{}, error) {
+	// Define our engineering team - in a real application, this might come from a database or config
+	engineers := []string{"John Smith", "Emma Johnson", "Michael Chen", "Sarah Williams", "David Garcia"}
+
+	// Query for completed issues per engineer
+	query := `
+		SELECT 
+			assigned_to AS engineer, 
+			COUNT(*) AS issues_resolved,
+			AVG(EXTRACT(EPOCH FROM (updated_at - created_at))) AS avg_resolution_time,
+			COUNT(CASE WHEN type = 'POTHOLE' THEN 1 END) AS pothole_count,
+			COUNT(CASE WHEN type = 'STREET_LIGHT' THEN 1 END) AS streetlight_count,
+			COUNT(CASE WHEN type = 'GRAFFITI' THEN 1 END) AS graffiti_count,
+			COUNT(CASE WHEN type = 'ANTI_SOCIAL' THEN 1 END) AS antisocial_count,
+			COUNT(CASE WHEN type = 'FLY_TIPPING' THEN 1 END) AS flytipping_count,
+			COUNT(CASE WHEN type = 'BLOCKED_DRAIN' THEN 1 END) AS blockeddrain_count
+		FROM issues
+		WHERE status = 'RESOLVED' AND assigned_to IS NOT NULL
+		GROUP BY assigned_to;
+	`
 
 	rows, err := db.Query(query)
 	if err != nil {
@@ -290,17 +327,87 @@ func (db *DB) GetEngineerPerformance() (map[string]int, error) {
 	}
 	defer rows.Close()
 
-	engineerPerformance := make(map[string]int)
+	// Create a performance map for each engineer
+	engineersMap := make(map[string]interface{})
+
+	// Initialize the map with all engineers, even those without resolved issues
+	for _, engineer := range engineers {
+		engineersMap[engineer] = map[string]interface{}{
+			"issues_resolved": 0,
+			"avg_resolution_time": "0d 0h",
+			"avg_resolution_seconds": 0.0,
+			"issue_types": map[string]int{
+				"POTHOLE": 0,
+				"STREET_LIGHT": 0,
+				"GRAFFITI": 0,
+				"ANTI_SOCIAL": 0,
+				"FLY_TIPPING": 0,
+				"BLOCKED_DRAIN": 0,
+			},
+		}
+	}
+
+	// Fill in data for engineers with resolved issues
 	for rows.Next() {
 		var engineer string
 		var issuesResolved int
-		if err := rows.Scan(&engineer, &issuesResolved); err != nil {
+		var avgResolutionTime float64
+		var potholeCount, streetlightCount, graffitiCount int
+		var antisocialCount, flytippingCount, blockeddrainCount int
+
+		if err := rows.Scan(
+			&engineer, 
+			&issuesResolved, 
+			&avgResolutionTime,
+			&potholeCount,
+			&streetlightCount,
+			&graffitiCount,
+			&antisocialCount,
+			&flytippingCount,
+			&blockeddrainCount,
+		); err != nil {
 			return nil, err
 		}
-		engineerPerformance[engineer] = issuesResolved
+
+		// Only include engineers in our predefined list
+		found := false
+		for _, validEngineer := range engineers {
+			if validEngineer == engineer {
+				found = true
+				break
+			}
+		}
+
+		// Skip if not in our engineer list
+		if !found {
+			continue
+		}
+
+		if avgResolutionTime < 0 {
+			avgResolutionTime = 0
+		}
+
+		days := int(avgResolutionTime) / 86400
+		hours := (int(avgResolutionTime) % 86400) / 3600
+		avgTimeFormatted := fmt.Sprintf("%dd %dh", days, hours)
+
+		// Build the performance data for this engineer
+		engineersMap[engineer] = map[string]interface{}{
+			"issues_resolved": issuesResolved,
+			"avg_resolution_time": avgTimeFormatted,
+			"avg_resolution_seconds": avgResolutionTime,
+			"issue_types": map[string]int{
+				"POTHOLE": potholeCount,
+				"STREET_LIGHT": streetlightCount,
+				"GRAFFITI": graffitiCount,
+				"ANTI_SOCIAL": antisocialCount,
+				"FLY_TIPPING": flytippingCount,
+				"BLOCKED_DRAIN": blockeddrainCount,
+			},
+		}
 	}
 
-	return engineerPerformance, nil
+	return engineersMap, nil
 }
 
 // GetIssueAnalytics retrieves aggregated statistics for issues within a specified time range.

@@ -85,10 +85,10 @@ func (mr *MockDatabaseOperationsMockRecorder) GetAverageResolutionTime() *gomock
 }
 
 // GetEngineerPerformance mocks base method.
-func (m *MockDatabaseOperations) GetEngineerPerformance() (map[string]int, error) {
+func (m *MockDatabaseOperations) GetEngineerPerformance() (map[string]interface{}, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetEngineerPerformance")
-	ret0, _ := ret[0].(map[string]int)
+	ret0, _ := ret[0].(map[string]interface{})
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
