@@ -21,7 +21,7 @@ services:
 
   # MinIO Object Storage
   minio:
-    image: quay.io/minio/minio:latest
+    image: minio/minio:latest
     container_name: chalkstone-minio
     environment:
       - MINIO_ROOT_USER=minioadmin
