@@ -207,20 +207,43 @@ const DashboardPage = () => {
             const issuesResponse = await issuesService.getAllIssues(1, 20);
             console.log('Issues API response:', issuesResponse.data);
 
-            // Filter for NEW issues only
+            // Determine the structure of the response and extract the issues array
             let allIssues = [];
+            
+            console.log('Response data type:', typeof issuesResponse.data);
+            
             if (Array.isArray(issuesResponse.data)) {
+              console.log('Data is an array');
               allIssues = issuesResponse.data;
-            } else if (issuesResponse.data && Array.isArray(issuesResponse.data.data)) {
-              allIssues = issuesResponse.data.data;
+            } else if (issuesResponse.data && typeof issuesResponse.data === 'object') {
+              if (Array.isArray(issuesResponse.data.data)) {
+                console.log('Data is an object with data array');
+                allIssues = issuesResponse.data.data;
+              } else if (Array.isArray(issuesResponse.data.issues)) {
+                console.log('Data is an object with issues array');
+                allIssues = issuesResponse.data.issues;
+              } else {
+                // If it's a single issue object
+                console.log('Data may be a single issue or unknown format');
+                if (issuesResponse.data.id) {
+                  allIssues = [issuesResponse.data];
+                }
+              }
             }
             
-            // Filter to only NEW status issues
-            const newIssues = allIssues.filter(issue => issue.status === 'NEW');
+            console.log('Extracted all issues:', allIssues);
+            
+            // Filter to only NEW status issues, being case-insensitive
+            const newIssues = allIssues.filter(issue => {
+              const status = issue.status || '';
+              return status.toUpperCase() === 'NEW';
+            });
+            
+            console.log('Filtered NEW issues:', newIssues);
             setIssues(newIssues);
             
             if (newIssues.length === 0) {
-              console.warn('No NEW issues found');
+              console.warn('No NEW issues found. Check if issues have NEW status in the database.');
             }
           } catch (issuesError) {
             console.error('Error fetching issues:', issuesError);
