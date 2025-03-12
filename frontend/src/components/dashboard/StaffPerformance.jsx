@@ -239,7 +239,7 @@ const StaffPerformance = ({ data = [] }) => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip formatter={(value, name) => [value, name === 'resolved' ? 'Resolved Issues' : 'Assigned Issues']} />
+                    <Tooltip content={CustomTooltip} />
                     <Legend />
                     <Bar dataKey="resolved" name="Resolved Issues" fill="#82ca9d" />
                     <Bar dataKey="assigned" name="Assigned Issues" fill="#8884d8" />
@@ -362,6 +362,36 @@ const StaffPerformance = ({ data = [] }) => {
       </Grid>
     </Box>
   );
+};
+
+// Custom tooltip component for the chart
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <Paper sx={{ p: 1.5, boxShadow: 2 }}>
+        <Typography variant="subtitle2" sx={{ mb: 1 }}>{label}</Typography>
+        {payload.map((entry, index) => (
+          <Box key={`item-${index}`} sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+            <Box 
+              component="span" 
+              sx={{ 
+                width: 12, 
+                height: 12, 
+                borderRadius: '50%', 
+                bgcolor: entry.color,
+                display: 'inline-block',
+                mr: 1 
+              }}
+            />
+            <Typography variant="body2" color="text.secondary">
+              {entry.dataKey === 'resolved' ? 'Resolved Issues' : 'Assigned Issues'}: {entry.value}
+            </Typography>
+          </Box>
+        ))}
+      </Paper>
+    );
+  }
+  return null;
 };
 
 export default StaffPerformance;

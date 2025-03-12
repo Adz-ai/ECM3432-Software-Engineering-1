@@ -156,7 +156,7 @@ const HomePage = () => {
   const stats = [
     { value: '850+', label: 'Issues Reported' },
     { value: '720+', label: 'Issues Resolved' },
-    { value: '15', label: 'Days Avg. Resolution Time' },
+    { value: '26', label: 'Days Avg. Resolution Time' },
     { value: '500+', label: 'Active Users' },
   ];
 

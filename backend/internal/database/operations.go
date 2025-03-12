@@ -455,7 +455,7 @@ func (db *DB) GetEngineerPerformance() ([]*models.EngineerPerformance, error) {
 			// Continue with the next row rather than failing the entire operation
 			continue
 		}
-		
+
 		// Handle NULL values for avgResolutionTime
 		var avgResolutionTime float64
 		if avgResolutionTimeNullable.Valid {
@@ -499,7 +499,7 @@ func (db *DB) GetEngineerPerformance() ([]*models.EngineerPerformance, error) {
 				"FLY_TIPPING":   flytippingResolved,
 				"BLOCKED_DRAIN": blockeddrainResolved,
 			},
-			IssuesAssigned:       issuesAssigned,
+			IssuesAssigned: issuesAssigned,
 			AssignedIssuesByType: map[string]int{
 				"POTHOLE":       potholeAssigned,
 				"STREET_LIGHT":  streetlightAssigned,
@@ -508,7 +508,7 @@ func (db *DB) GetEngineerPerformance() ([]*models.EngineerPerformance, error) {
 				"FLY_TIPPING":   flytippingAssigned,
 				"BLOCKED_DRAIN": blockeddrainAssigned,
 			},
-			TotalIssues:          totalIssues,
+			TotalIssues: totalIssues,
 		}
 
 		results = append(results, performance)
@@ -536,7 +536,7 @@ func (db *DB) GetEngineerPerformance() ([]*models.EngineerPerformance, error) {
 					"FLY_TIPPING":   0,
 					"BLOCKED_DRAIN": 0,
 				},
-				IssuesAssigned:       0,
+				IssuesAssigned: 0,
 				AssignedIssuesByType: map[string]int{
 					"POTHOLE":       0,
 					"STREET_LIGHT":  0,
@@ -545,7 +545,7 @@ func (db *DB) GetEngineerPerformance() ([]*models.EngineerPerformance, error) {
 					"FLY_TIPPING":   0,
 					"BLOCKED_DRAIN": 0,
 				},
-				TotalIssues:          0,
+				TotalIssues: 0,
 			}
 			results = append(results, performance)
 		}
@@ -581,13 +581,31 @@ func (db *DB) GetIssueAnalytics(startDate, endDate string) (map[string]interface
 			       WHERE ($1::date IS NULL OR created_at >= $1::date) 
 			       AND ($2::date IS NULL OR created_at <= $2::date) 
 			       GROUP BY status) AS s) AS issues_by_status,
-			(SELECT jsonb_object_agg(month, count) 
-			 FROM (SELECT to_char(created_at, 'YYYY-MM') AS month, COUNT(*) AS count 
-			       FROM issues 
-			       WHERE ($1::date IS NULL OR created_at >= $1::date) 
-			       AND ($2::date IS NULL OR created_at <= $2::date) 
-			       GROUP BY to_char(created_at, 'YYYY-MM')) AS m) 
-			AS issues_by_month
+			-- Get all months from created_at (reported issues)
+			(SELECT jsonb_object_agg(month, jsonb_build_object('reported', reported_count, 'resolved', COALESCE(resolved_count, 0)))
+			 FROM (
+			   SELECT 
+			     created_months.month,
+			     created_months.count AS reported_count,
+			     resolved_months.count AS resolved_count
+			   FROM (
+			     SELECT to_char(created_at, 'YYYY-MM') AS month, COUNT(*) AS count
+			     FROM issues
+			     WHERE ($1::date IS NULL OR created_at >= $1::date)
+			     AND ($2::date IS NULL OR created_at <= $2::date)
+			     GROUP BY to_char(created_at, 'YYYY-MM')
+			   ) AS created_months
+			   LEFT JOIN (
+			     SELECT to_char(resolved_at, 'YYYY-MM') AS month, COUNT(*) AS count
+			     FROM issues
+			     WHERE status = 'RESOLVED'
+			     AND resolved_at IS NOT NULL
+			     AND ($1::date IS NULL OR resolved_at >= $1::date)
+			     AND ($2::date IS NULL OR resolved_at <= $2::date)
+			     GROUP BY to_char(resolved_at, 'YYYY-MM')
+			   ) AS resolved_months ON created_months.month = resolved_months.month
+			 ) AS monthly_stats
+			) AS issues_by_month
 		FROM issues
 		WHERE ($1::date IS NULL OR created_at >= $1::date) 
 		  AND ($2::date IS NULL OR created_at <= $2::date);
@@ -608,7 +626,7 @@ func (db *DB) GetIssueAnalytics(startDate, endDate string) (map[string]interface
 
 	issuesByType := make(map[string]int)
 	issuesByStatus := make(map[string]int)
-	issuesByMonth := make(map[string]int)
+	issuesByMonth := make(map[string]interface{})
 
 	if issuesByTypeJSON != nil {
 		if err := json.Unmarshal(issuesByTypeJSON, &issuesByType); err != nil {

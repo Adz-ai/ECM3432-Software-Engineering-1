@@ -8,6 +8,7 @@ import IssueTypeChart from '../components/dashboard/IssueTypeChart';
 import IssueStatusChart from '../components/dashboard/IssueStatusChart';
 import TimelineChart from '../components/dashboard/TimelineChart';
 import StaffPerformance from '../components/dashboard/StaffPerformance';
+import ResolutionTimeChart from '../components/dashboard/ResolutionTimeChart';
 import { motion } from 'framer-motion';
 
 // Material UI imports
@@ -77,12 +78,24 @@ const transformAnalyticsData = (apiResponse) => {
     count
   }));
 
-  // Transform issues_by_month from {MONTH: count} to [{date: MONTH, reported: count, resolved: 0}]
-  const issuesTimeline = Object.entries(apiResponse.issues_by_month || {}).map(([date, count]) => ({
-    date,
-    reported: count,
-    resolved: 0 // No resolved data available in API response
-  }));
+  // Transform issues_by_month from {MONTH: {reported: X, resolved: Y}} to [{date: MONTH, reported: X, resolved: Y}]
+  const issuesTimeline = Object.entries(apiResponse.issues_by_month || {}).map(([date, data]) => {
+    // Handle both the old format (direct count) and new format (object with reported/resolved)
+    if (typeof data === 'object' && data !== null) {
+      return {
+        date,
+        reported: data.reported || 0,
+        resolved: data.resolved || 0
+      };
+    } else {
+      // Fallback for backward compatibility with old format
+      return {
+        date,
+        reported: typeof data === 'number' ? data : 0,
+        resolved: 0
+      };
+    }
+  });
 
   // Transform engineer_performance (if it exists)
   const staffPerformance = Object.entries(apiResponse.engineer_performance || {}).map(([staffName, data]) => ({
@@ -189,19 +202,25 @@ const DashboardPage = () => {
             setResolutionTimeData(null);
           }
 
-          // Fetch recent issues
+          // Fetch open (NEW) issues
           try {
-            const issuesResponse = await issuesService.getAllIssues(1, 10);
+            const issuesResponse = await issuesService.getAllIssues(1, 20);
             console.log('Issues API response:', issuesResponse.data);
 
-            // Ensure we have an array of issues
+            // Filter for NEW issues only
+            let allIssues = [];
             if (Array.isArray(issuesResponse.data)) {
-              setIssues(issuesResponse.data);
+              allIssues = issuesResponse.data;
             } else if (issuesResponse.data && Array.isArray(issuesResponse.data.data)) {
-              setIssues(issuesResponse.data.data);
-            } else {
-              console.warn('Unexpected issues response format:', issuesResponse.data);
-              setIssues([]);
+              allIssues = issuesResponse.data.data;
+            }
+            
+            // Filter to only NEW status issues
+            const newIssues = allIssues.filter(issue => issue.status === 'NEW');
+            setIssues(newIssues);
+            
+            if (newIssues.length === 0) {
+              console.warn('No NEW issues found');
             }
           } catch (issuesError) {
             console.error('Error fetching issues:', issuesError);
@@ -542,7 +561,7 @@ const DashboardPage = () => {
               <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
                 Issues by Type
               </Typography>
-              <Box sx={{ height: 300 }}>
+              <Box sx={{ height: 350, width: '100%', maxWidth: '100%' }}>
                 <IssueTypeChart data={analytics?.issuesByType || []} />
               </Box>
             </CardContent>
@@ -563,7 +582,7 @@ const DashboardPage = () => {
               <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
                 Issues by Status
               </Typography>
-              <Box sx={{ height: 300 }}>
+              <Box sx={{ height: 350, width: '100%', maxWidth: '100%' }}>
                 <IssueStatusChart data={analytics?.issuesByStatus || []} />
               </Box>
             </CardContent>
@@ -590,6 +609,28 @@ const DashboardPage = () => {
           </Box>
         </CardContent>
       </MotionCard>
+
+      {/* Average Resolution Time by Issue Type */}
+      {resolutionTimeData && (
+        <MotionCard 
+          elevation={2}
+          variants={fadeIn}
+          sx={{ 
+            mb: 4, 
+            borderRadius: 2,
+            overflow: 'hidden' 
+          }}
+        >
+          <CardContent>
+            <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
+              Average Resolution Time by Issue Type
+            </Typography>
+            <Box sx={{ height: 350 }}>
+              <ResolutionTimeChart data={resolutionTimeData} />
+            </Box>
+          </CardContent>
+        </MotionCard>
+      )}
 
       {/* Engineer Performance */}
       <MotionCard 
@@ -622,7 +663,7 @@ const DashboardPage = () => {
         </CardContent>
       </MotionCard>
 
-      {/* Recent Issues */}
+      {/* Open Issues */}
       <MotionCard 
         elevation={2}
         variants={fadeIn}
@@ -634,7 +675,10 @@ const DashboardPage = () => {
       >
         <CardContent>
           <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
-            Recent Issues
+            Open Issues
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Issues with NEW status that require attention
           </Typography>
           
           {!Array.isArray(issues) || issues.length === 0 ? (
@@ -645,7 +689,7 @@ const DashboardPage = () => {
               textAlign: 'center'
             }}>
               <Typography variant="body1" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                No issues found
+                No open issues found
               </Typography>
             </Box>
           ) : (

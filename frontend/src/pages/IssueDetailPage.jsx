@@ -483,7 +483,6 @@ const IssueDetailPage = () => {
                               <MenuItem value="NEW">New</MenuItem>
                               <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
                               <MenuItem value="RESOLVED">Resolved</MenuItem>
-                              <MenuItem value="CLOSED">Closed</MenuItem>
                             </Select>
                           </FormControl>
                         </Grid>
