@@ -8,6 +8,44 @@ import IssueTypeChart from '../components/dashboard/IssueTypeChart';
 import IssueStatusChart from '../components/dashboard/IssueStatusChart';
 import TimelineChart from '../components/dashboard/TimelineChart';
 import StaffPerformance from '../components/dashboard/StaffPerformance';
+import { motion } from 'framer-motion';
+
+// Material UI imports
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Container,
+  Divider,
+  Grid,
+  Paper,
+  TextField,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  useTheme,
+  alpha,
+} from '@mui/material';
+
+// Icons
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import PendingIcon from '@mui/icons-material/Pending';
+import ScheduleIcon from '@mui/icons-material/Schedule';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+
+// Create motion components
+const MotionBox = motion(Box);
+const MotionTypography = motion(Typography);
+const MotionContainer = motion(Container);
+const MotionPaper = motion(Paper);
+const MotionCard = motion(Card);
+const MotionGrid = motion(Grid);
 
 // Helper function to convert API response to the format expected by chart components
 const transformAnalyticsData = (apiResponse) => {
@@ -74,6 +112,7 @@ const transformAnalyticsData = (apiResponse) => {
 const DashboardPage = () => {
   const { currentUser, isStaff } = useContext(AuthContext);
   const navigate = useNavigate();
+  const theme = useTheme();
 
   const [analytics, setAnalytics] = useState(null);
   const [issues, setIssues] = useState([]);
@@ -185,144 +224,477 @@ const DashboardPage = () => {
     return <div className="loading">Loading dashboard data...</div>;
   }
 
+  // Animation variants
+  const fadeIn = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+  };
+  
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+  
+  const cardAnimation = {
+    hidden: { scale: 0.9, opacity: 0 },
+    visible: { 
+      scale: 1, 
+      opacity: 1, 
+      transition: { 
+        type: 'spring', 
+        stiffness: 300, 
+        damping: 10 
+      } 
+    }
+  };
+
   return (
-    <div className="dashboard-container">
-      <h1>Staff Dashboard</h1>
+    <MotionContainer 
+      maxWidth="lg" 
+      sx={{ py: 4 }}
+      initial="hidden"
+      animate="visible"
+      variants={fadeIn}
+    >
+      {/* Header Section */}
+      <MotionBox 
+        sx={{ 
+          mb: 4, 
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+        }}
+        variants={fadeIn}
+      >
+        <MotionTypography 
+          variant="h3" 
+          component="h1" 
+          gutterBottom
+          sx={{ 
+            fontWeight: 700,
+            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            mb: 2
+          }}
+        >
+          Staff Dashboard
+        </MotionTypography>
+        <Divider sx={{ width: '100px', borderWidth: 2, borderColor: theme.palette.primary.main, mb: 3 }} />
+      </MotionBox>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && (
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            p: 2, 
+            mb: 4, 
+            bgcolor: alpha(theme.palette.error.main, 0.1),
+            color: theme.palette.error.main,
+            border: `1px solid ${theme.palette.error.light}`,
+            borderRadius: 2
+          }}
+        >
+          <Typography variant="body1">{error}</Typography>
+        </Paper>
+      )}
 
-      <div className="date-range-selector">
-        <div className="form-group">
-          <label htmlFor="startDate">Start Date</label>
-          <input
-            type="date"
-            id="startDate"
-            name="startDate"
-            value={dateRange.startDate}
-            onChange={handleDateRangeChange}
-          />
-        </div>
+      {/* Date Range Selector */}
+      <MotionPaper 
+        elevation={2} 
+        sx={{ 
+          p: 3, 
+          mb: 4, 
+          borderRadius: 2,
+          background: alpha(theme.palette.background.paper, 0.8),
+          backdropFilter: 'blur(10px)',
+        }}
+        variants={fadeIn}
+      >
+        <Grid container spacing={3} alignItems="center">
+          <Grid item xs={12} md={4}>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
+              Filter Data by Date Range
+            </Typography>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              id="startDate"
+              name="startDate"
+              label="Start Date"
+              type="date"
+              value={dateRange.startDate}
+              onChange={handleDateRangeChange}
+              InputLabelProps={{ shrink: true }}
+              sx={{ bgcolor: 'white' }}
+            />
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              id="endDate"
+              name="endDate"
+              label="End Date"
+              type="date"
+              value={dateRange.endDate}
+              onChange={handleDateRangeChange}
+              InputLabelProps={{ shrink: true }}
+              sx={{ bgcolor: 'white' }}
+            />
+          </Grid>
+        </Grid>
+      </MotionPaper>
 
-        <div className="form-group">
-          <label htmlFor="endDate">End Date</label>
-          <input
-            type="date"
-            id="endDate"
-            name="endDate"
-            value={dateRange.endDate}
-            onChange={handleDateRangeChange}
-          />
-        </div>
-      </div>
+      {/* Summary Cards */}
+      <MotionGrid 
+        container 
+        spacing={3} 
+        sx={{ mb: 4 }}
+        variants={staggerContainer}
+      >
+        <Grid item xs={12} sm={6} md={3}>
+          <MotionCard 
+            elevation={2}
+            variants={cardAnimation}
+            whileHover={{ y: -5, boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }}
+            sx={{ 
+              height: '100%',
+              borderRadius: 2,
+              overflow: 'hidden',
+              borderTop: `4px solid ${theme.palette.primary.main}`
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ 
+                  display: 'flex',
+                  mr: 2,
+                  p: 1.5,
+                  borderRadius: '12px',
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  color: theme.palette.primary.main
+                }}>
+                  <TrendingUpIcon fontSize="large" />
+                </Box>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>Total Issues</Typography>
+              </Box>
+              <Typography variant="h3" sx={{ fontWeight: 700 }}>
+                {analytics?.totalIssues || 0}
+              </Typography>
+            </CardContent>
+          </MotionCard>
+        </Grid>
 
-      <div className="dashboard-summary">
-        <div className="summary-card">
-          <h3>Total Issues</h3>
-          <p className="summary-value">{analytics?.totalIssues || 0}</p>
-        </div>
+        <Grid item xs={12} sm={6} md={3}>
+          <MotionCard 
+            elevation={2}
+            variants={cardAnimation}
+            whileHover={{ y: -5, boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }}
+            sx={{ 
+              height: '100%',
+              borderRadius: 2,
+              overflow: 'hidden',
+              borderTop: `4px solid ${theme.palette.success.main}`
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ 
+                  display: 'flex',
+                  mr: 2,
+                  p: 1.5,
+                  borderRadius: '12px',
+                  bgcolor: alpha(theme.palette.success.main, 0.1),
+                  color: theme.palette.success.main
+                }}>
+                  <CheckCircleIcon fontSize="large" />
+                </Box>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>Resolved Issues</Typography>
+              </Box>
+              <Typography variant="h3" sx={{ fontWeight: 700 }}>
+                {analytics?.resolvedIssues || 0}
+              </Typography>
+            </CardContent>
+          </MotionCard>
+        </Grid>
 
-        <div className="summary-card">
-          <h3>Resolved Issues</h3>
-          <p className="summary-value">{analytics?.resolvedIssues || 0}</p>
-        </div>
+        <Grid item xs={12} sm={6} md={3}>
+          <MotionCard 
+            elevation={2}
+            variants={cardAnimation}
+            whileHover={{ y: -5, boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }}
+            sx={{ 
+              height: '100%',
+              borderRadius: 2,
+              overflow: 'hidden',
+              borderTop: `4px solid ${theme.palette.warning.main}`
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ 
+                  display: 'flex',
+                  mr: 2,
+                  p: 1.5,
+                  borderRadius: '12px',
+                  bgcolor: alpha(theme.palette.warning.main, 0.1),
+                  color: theme.palette.warning.main
+                }}>
+                  <PendingIcon fontSize="large" />
+                </Box>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>Pending Issues</Typography>
+              </Box>
+              <Typography variant="h3" sx={{ fontWeight: 700 }}>
+                {analytics?.pendingIssues || 0}
+              </Typography>
+            </CardContent>
+          </MotionCard>
+        </Grid>
 
-        <div className="summary-card">
-          <h3>Pending Issues</h3>
-          <p className="summary-value">{analytics?.pendingIssues || 0}</p>
-        </div>
+        <Grid item xs={12} sm={6} md={3}>
+          <MotionCard 
+            elevation={2}
+            variants={cardAnimation}
+            whileHover={{ y: -5, boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }}
+            sx={{ 
+              height: '100%',
+              borderRadius: 2,
+              overflow: 'hidden',
+              borderTop: `4px solid ${theme.palette.info.main}`
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ 
+                  display: 'flex',
+                  mr: 2,
+                  p: 1.5,
+                  borderRadius: '12px',
+                  bgcolor: alpha(theme.palette.info.main, 0.1),
+                  color: theme.palette.info.main
+                }}>
+                  <ScheduleIcon fontSize="large" />
+                </Box>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>Avg. Resolution Time</Typography>
+              </Box>
+              <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                {typeof analytics?.avgResolutionTime === 'string' ?
+                  analytics.avgResolutionTime : 'N/A'}
+              </Typography>
+            </CardContent>
+          </MotionCard>
+        </Grid>
+      </MotionGrid>
 
-        <div className="summary-card">
-          <h3>Avg. Resolution Time</h3>
-          <p className="summary-value">{typeof analytics?.avgResolutionTime === 'string' ?
-            analytics.avgResolutionTime : 'N/A'}</p>
-        </div>
-      </div>
+      {/* Charts Section */}
+      <MotionGrid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} md={6}>
+          <MotionCard 
+            elevation={2}
+            variants={fadeIn}
+            sx={{ 
+              height: '100%', 
+              borderRadius: 2,
+              overflow: 'hidden' 
+            }}
+          >
+            <CardContent>
+              <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
+                Issues by Type
+              </Typography>
+              <Box sx={{ height: 300 }}>
+                <IssueTypeChart data={analytics?.issuesByType || []} />
+              </Box>
+            </CardContent>
+          </MotionCard>
+        </Grid>
 
-      <div className="dashboard-charts">
-        <div className="chart-container">
-          <h2>Issues by Type</h2>
-          <IssueTypeChart data={analytics?.issuesByType || []} />
-        </div>
+        <Grid item xs={12} md={6}>
+          <MotionCard 
+            elevation={2}
+            variants={fadeIn}
+            sx={{ 
+              height: '100%', 
+              borderRadius: 2,
+              overflow: 'hidden' 
+            }}
+          >
+            <CardContent>
+              <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
+                Issues by Status
+              </Typography>
+              <Box sx={{ height: 300 }}>
+                <IssueStatusChart data={analytics?.issuesByStatus || []} />
+              </Box>
+            </CardContent>
+          </MotionCard>
+        </Grid>
+      </MotionGrid>
 
-        <div className="chart-container">
-          <h2>Issues by Status</h2>
-          <IssueStatusChart data={analytics?.issuesByStatus || []} />
-        </div>
-      </div>
+      {/* Timeline Chart */}
+      <MotionCard 
+        elevation={2}
+        variants={fadeIn}
+        sx={{ 
+          mb: 4, 
+          borderRadius: 2,
+          overflow: 'hidden' 
+        }}
+      >
+        <CardContent>
+          <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
+            Issues Timeline
+          </Typography>
+          <Box sx={{ height: 350 }}>
+            <TimelineChart data={analytics?.issuesTimeline || []} />
+          </Box>
+        </CardContent>
+      </MotionCard>
 
-      <div className="dashboard-charts">
-        <div className="chart-container full-width">
-          <h2>Issues Timeline</h2>
-          <TimelineChart data={analytics?.issuesTimeline || []} />
-        </div>
-      </div>
+      {/* Staff Performance */}
+      <MotionCard 
+        elevation={2}
+        variants={fadeIn}
+        sx={{ 
+          mb: 4, 
+          borderRadius: 2,
+          overflow: 'hidden' 
+        }}
+      >
+        <CardContent>
+          <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
+            Staff Performance
+          </Typography>
+          {analytics?.staffPerformance && analytics.staffPerformance.length > 0 ? (
+            <StaffPerformance data={analytics.staffPerformance} />
+          ) : (
+            <Box sx={{ 
+              p: 4, 
+              bgcolor: alpha(theme.palette.background.default, 0.5),
+              borderRadius: 2,
+              textAlign: 'center'
+            }}>
+              <Typography variant="body1" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                No staff performance data available
+              </Typography>
+            </Box>
+          )}
+        </CardContent>
+      </MotionCard>
 
-      <div className="dashboard-section">
-        <h2>Staff Performance</h2>
-        {analytics?.staffPerformance && analytics.staffPerformance.length > 0 ? (
-          <StaffPerformance data={analytics.staffPerformance} />
-        ) : (
-          <div className="no-data-message">No staff performance data available</div>
-        )}
-      </div>
-
-      <div className="dashboard-section">
-        <h2>Recent Issues</h2>
-
-        {!Array.isArray(issues) || issues.length === 0 ? (
-          <div className="no-data-message">No issues found</div>
-        ) : (
-          <table className="issues-table">
-            <thead>
-            <tr>
-              <th>ID</th>
-              <th>Type</th>
-              <th>Status</th>
-              <th>Reported By</th>
-              <th>Assigned To</th>
-              <th>Created At</th>
-              <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            {issues.map((issue) => (
-              <tr key={issue.id || `issue-${Math.random()}`}>
-                <td>{issue.id || 'N/A'}</td>
-                <td>{(issue.type && typeof issue.type === 'string' ?
-                  issue.type.replace(/_/g, ' ') : 'N/A')}</td>
-                <td>{issue.status || 'N/A'}</td>
-                <td>{issue.reported_by || 'N/A'}</td>
-                <td>{issue.assigned_to || 'Unassigned'}</td>
-                <td>{issue.created_at ?
-                  new Date(issue.created_at).toLocaleDateString() : 'N/A'}</td>
-                <td>
-                  <button
-                    className="btn-view"
-                    onClick={() => navigate(`/issues/${issue.id}`)}
-                    disabled={!issue.id}
-                  >
-                    View
-                  </button>
-                </td>
-              </tr>
-            ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      <style jsx>{`
-        .no-data-message {
-          background-color: #f8f9fa;
-          border: 1px solid #dee2e6;
-          border-radius: 4px;
-          padding: 2rem;
-          text-align: center;
-          color: #6c757d;
-          font-style: italic;
-        }
-      `}</style>
-    </div>
+      {/* Recent Issues */}
+      <MotionCard 
+        elevation={2}
+        variants={fadeIn}
+        sx={{ 
+          mb: 4, 
+          borderRadius: 2,
+          overflow: 'hidden' 
+        }}
+      >
+        <CardContent>
+          <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
+            Recent Issues
+          </Typography>
+          
+          {!Array.isArray(issues) || issues.length === 0 ? (
+            <Box sx={{ 
+              p: 4, 
+              bgcolor: alpha(theme.palette.background.default, 0.5),
+              borderRadius: 2,
+              textAlign: 'center'
+            }}>
+              <Typography variant="body1" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                No issues found
+              </Typography>
+            </Box>
+          ) : (
+            <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none' }}>
+              <Table sx={{ minWidth: 650 }}>
+                <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 600 }}>ID</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Type</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Reported By</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Assigned To</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Created At</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {issues.map((issue) => (
+                    <TableRow 
+                      key={issue.id || `issue-${Math.random()}`}
+                      sx={{ '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) } }}
+                    >
+                      <TableCell>{issue.id || 'N/A'}</TableCell>
+                      <TableCell>{(issue.type && typeof issue.type === 'string' ?
+                        issue.type.replace(/_/g, ' ') : 'N/A')}</TableCell>
+                      <TableCell>
+                        <Box sx={{ 
+                          display: 'inline-block',
+                          px: 1.5,
+                          py: 0.5,
+                          borderRadius: '12px',
+                          fontSize: '0.875rem',
+                          fontWeight: 500,
+                          ...(issue.status === 'RESOLVED' ? {
+                              bgcolor: alpha(theme.palette.success.main, 0.1),
+                              color: theme.palette.success.dark
+                            } : issue.status === 'PENDING' ? {
+                              bgcolor: alpha(theme.palette.warning.main, 0.1),
+                              color: theme.palette.warning.dark
+                            } : issue.status === 'CLOSED' ? {
+                              bgcolor: alpha(theme.palette.info.main, 0.1),
+                              color: theme.palette.info.dark
+                            } : {
+                              bgcolor: alpha(theme.palette.grey[500], 0.1),
+                              color: theme.palette.grey[700]
+                            }
+                          )
+                        }}>
+                          {issue.status || 'N/A'}
+                        </Box>
+                      </TableCell>
+                      <TableCell>{issue.reported_by || 'N/A'}</TableCell>
+                      <TableCell>{issue.assigned_to || 'Unassigned'}</TableCell>
+                      <TableCell>{issue.created_at ?
+                        new Date(issue.created_at).toLocaleDateString() : 'N/A'}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<VisibilityIcon />}
+                          onClick={() => navigate(`/issues/${issue.id}`)}
+                          disabled={!issue.id}
+                          sx={{ 
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            boxShadow: 'none',
+                            '&:hover': {
+                              boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                            }
+                          }}
+                        >
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </CardContent>
+      </MotionCard>
+    </MotionContainer>
   );
 };
 
