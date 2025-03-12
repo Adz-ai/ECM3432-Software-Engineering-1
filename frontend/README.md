@@ -13,10 +13,33 @@ A web application that allows residents to report and track local issues such as
 
 ## Technologies Used
 
-- **Frontend**: React, React Router, Leaflet (maps), Recharts (data visualization)
-- **Backend**: RESTful API (existing backend with Swagger documentation)
-- **State Management**: React Context API
-- **Styling**: CSS with responsive design
+### Core Technologies
+- **React**: JavaScript library for building user interfaces (v18+)
+- **React Router**: For handling application routing and navigation
+- **React Context API**: For state management across components
+
+### UI Framework & Components
+- **Material UI (MUI)**: Comprehensive UI component library and design system
+  - MUI Grid System: For responsive layouts
+  - MUI Cards, Buttons, Inputs: For consistent UI elements
+  - MUI Icons: For iconography throughout the application
+  - MUI Theming: For customized styling and dark/light modes
+- **Framer Motion**: For smooth animations and transitions
+
+### Data Visualization
+- **Recharts**: For charts and graphs in the dashboard
+- **Leaflet**: For interactive maps with marker clustering
+
+### Forms & Validation
+- **Formik**: For form handling and validation
+- **Yup**: Schema-based form validation
+
+### Networking
+- **Axios**: Promise-based HTTP client for API requests
+
+### Development Tools
+- **ESLint**: For code linting and ensuring code quality
+- **npm**: Package management
 
 ## Project Structure
 

@@ -31,21 +31,57 @@ chalkstone-council-system/
 ## 💻 Technologies Used
 
 ### Frontend
-- **React**: UI library for building the user interface
-- **React Router**: For navigation and routing
-- **Leaflet**: Interactive maps for issue visualization
-- **Recharts**: Data visualization for analytics dashboard
-- **Axios**: HTTP client for API requests
+#### Core Technologies
+- **React**: UI library for building the user interface (v18+)
+- **React Router**: For client-side routing and navigation
+- **React Context API**: For state management across components
+
+#### UI Framework & Components
+- **Material UI (MUI)**: Comprehensive UI component library and design system
+  - MUI Grid System: For responsive layouts
+  - MUI Cards, Dialogs, Forms: For consistent UI elements
+  - MUI Icons: For iconography throughout the application
+  - MUI Theming: For customized styling with light/dark modes
+  - MUI Data Grid: For tabular data presentation
+- **Framer Motion**: For smooth animations and transitions
+
+#### Data Visualization
+- **Recharts**: Library for creating responsive charts and graphs in the dashboard
+- **Leaflet**: Interactive maps for issue visualization with marker clustering
+
+#### Forms & Validation
+- **Formik**: For form handling and validation
+- **Yup**: Schema-based form validation library
+
+#### Networking
+- **Axios**: Promise-based HTTP client for API requests
+
+#### Development Tools
+- **ESLint**: For code linting and ensuring code quality
+- **npm**: Package management
 
 ### Backend
+#### Core Technologies
 - **Go (Golang)**: Backend API language
-- **Gin**: HTTP web framework
-- **PostgreSQL**: Relational database
-- **MinIO**: Object storage for image uploads
-- **JWT**: Authentication & authorization
-- **Swagger**: API documentation
+- **Gin**: HTTP web framework for building the RESTful API
+
+#### Database & Storage
+- **PostgreSQL**: Relational database for persistent data storage
+- **MinIO**: Object storage service for image uploads and retrieval
+- **SQL Migrations**: For database schema versioning
+
+#### Security
+- **JWT**: JSON Web Tokens for authentication & authorization
 - **Bcrypt**: Secure password hashing
-- **TestContainers**: Database testing
+- **CORS**: Cross-Origin Resource Sharing configuration
+
+#### API Development
+- **Swagger**: API documentation and OpenAPI specification
+- **Go Validator**: Request validation
+
+#### Testing
+- **Go Testing**: Standard Go testing framework
+- **TestContainers**: Database testing with containerization
 
 ## 🔧 Setup Instructions
 
