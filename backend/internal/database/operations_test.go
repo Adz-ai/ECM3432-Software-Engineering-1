@@ -402,8 +402,8 @@ func TestGetIssueAnalytics(t *testing.T) {
 	}
 
 	// ✅ Check total issue count first
-	totalIssues, ok := analytics["total_issues"]
-	assert.True(t, ok, "total_issues should exist in analytics result")
+	totalIssues, ok := analytics["total"]
+	assert.True(t, ok, "total should exist in analytics result")
 	assert.Equal(t, 3, totalIssues, "There should be 3 total issues")
 
 	// ✅ Verify issue distribution by type

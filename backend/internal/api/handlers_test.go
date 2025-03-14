@@ -8,8 +8,10 @@ import (
 	"chalkstone.council/internal/models"
 
 	"encoding/json"
+	"errors"
 	"fmt"
 	"go.uber.org/mock/gomock"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -54,9 +56,39 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *dbMock.MockDatabaseOperations,
 	return router, mockDB, mockAuth
 }
 
+// Helper function to create a test router without staff authorization
+func setupUnauthorizedRouter(t *testing.T) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	ctrl := gomock.NewController(t)
+
+	mockDB := dbMock.NewMockDatabaseOperations(ctrl)
+	mockAuth := authMock.NewMockAuthenticator(ctrl)
+
+	// Mock authentication behavior but without staff privileges
+	mockAuth.EXPECT().AuthMiddleware().Return(func(c *gin.Context) {
+		c.Set("userID", "test_user")
+		c.Set("userType", "user") // Regular user, not staff
+		c.Next()
+	}).AnyTimes()
+
+	mockAuth.EXPECT().StaffOnly().Return(func(c *gin.Context) {
+		// Pass through the middleware but check userType in the handler
+		c.Next()
+	}).AnyTimes()
+
+	router := gin.Default()
+	SetupRoutes(router, mockDB, mockAuth)
+
+	return router
+}
+
 // Helper function to create a test request with an authenticated user
 func createAuthenticatedRequest(method, url string, body *bytes.Buffer) *http.Request {
-	req, _ := http.NewRequest(method, url, body)
+	var bodyReader io.Reader
+	if body != nil {
+		bodyReader = body
+	}
+	req, _ := http.NewRequest(method, url, bodyReader)
 	req.Header.Set("Authorization", "Bearer valid_token")
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -528,40 +560,165 @@ func TestGetIssueAnalytics(t *testing.T) {
 func TestSearchIssues(t *testing.T) {
 	router, mockDB, _ := setupTestRouter(t)
 
-	mockIssues := []*models.Issue{
-		{
-			ID:          1,
-			Type:        "POTHOLE",
-			Status:      "NEW",
-			Description: "Test pothole",
-			Location: struct {
-				Latitude  float64 `json:"latitude" db:"latitude"`
-				Longitude float64 `json:"longitude" db:"longitude"`
-			}{Latitude: 51.5074, Longitude: -0.1278},
-			ReportedBy: "test_user",
-		},
-	}
+	// Test case 1: Successful search with both type and status
+	t.Run("Success - Both Filters", func(t *testing.T) {
+		mockIssues := []*models.Issue{
+			{
+				ID:          1,
+				Type:        "POTHOLE",
+				Status:      "NEW",
+				Description: "Test pothole",
+				Location: struct {
+					Latitude  float64 `json:"latitude" db:"latitude"`
+					Longitude float64 `json:"longitude" db:"longitude"`
+				}{Latitude: 51.5074, Longitude: -0.1278},
+				ReportedBy: "test_user",
+			},
+		}
 
-	mockDB.EXPECT().SearchIssues("POTHOLE", "NEW").Return(mockIssues, nil)
+		mockDB.EXPECT().SearchIssues("POTHOLE", "NEW").Return(mockIssues, nil)
 
-	req, _ := http.NewRequest("GET", "/api/issues/search?type=POTHOLE&status=NEW", nil)
-	req.Header.Set("Authorization", "Bearer staff_token")
+		req, _ := http.NewRequest("GET", "/api/issues/search?type=POTHOLE&status=NEW", nil)
+		req.Header.Set("Authorization", "Bearer staff_token")
 
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, http.StatusOK, w.Code)
 
-	// The API directly returns an array of issues without wrapping them
-	var issues []*models.Issue
-	err := json.Unmarshal(w.Body.Bytes(), &issues)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal response: %v", err)
-	}
+		// The API directly returns an array of issues without wrapping them
+		var issues []*models.Issue
+		err := json.Unmarshal(w.Body.Bytes(), &issues)
+		if err != nil {
+			t.Fatalf("Failed to unmarshal response: %v", err)
+		}
 
-	assert.Equal(t, 1, len(issues))
-	assert.Equal(t, int64(1), issues[0].ID)
-	assert.Equal(t, "POTHOLE", string(issues[0].Type))
+		assert.Equal(t, 1, len(issues))
+		assert.Equal(t, int64(1), issues[0].ID)
+		assert.Equal(t, "POTHOLE", string(issues[0].Type))
+		assert.Equal(t, "NEW", string(issues[0].Status))
+	})
+
+	// Test case 2: Successful search with only type filter
+	t.Run("Success - Type Filter Only", func(t *testing.T) {
+		mockIssues := []*models.Issue{
+			{
+				ID:          1,
+				Type:        "STREET_LIGHT",
+				Status:      "NEW",
+				Description: "Broken streetlight",
+			},
+			{
+				ID:          2,
+				Type:        "STREET_LIGHT",
+				Status:      "RESOLVED",
+				Description: "Fixed streetlight",
+			},
+		}
+
+		mockDB.EXPECT().SearchIssues("STREET_LIGHT", "").Return(mockIssues, nil)
+
+		req, _ := http.NewRequest("GET", "/api/issues/search?type=STREET_LIGHT", nil)
+		req.Header.Set("Authorization", "Bearer staff_token")
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var issues []*models.Issue
+		err := json.Unmarshal(w.Body.Bytes(), &issues)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(issues))
+		assert.Equal(t, "STREET_LIGHT", string(issues[0].Type))
+		assert.Equal(t, "STREET_LIGHT", string(issues[1].Type))
+	})
+
+	// Test case 3: Successful search with only status filter
+	t.Run("Success - Status Filter Only", func(t *testing.T) {
+		mockIssues := []*models.Issue{
+			{
+				ID:     3,
+				Type:   "POTHOLE",
+				Status: "RESOLVED",
+			},
+			{
+				ID:     4,
+				Type:   "STREETLIGHT",
+				Status: "RESOLVED",
+			},
+		}
+
+		mockDB.EXPECT().SearchIssues("", "RESOLVED").Return(mockIssues, nil)
+
+		req, _ := http.NewRequest("GET", "/api/issues/search?status=RESOLVED", nil)
+		req.Header.Set("Authorization", "Bearer staff_token")
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var issues []*models.Issue
+		err := json.Unmarshal(w.Body.Bytes(), &issues)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(issues))
+		assert.Equal(t, "RESOLVED", string(issues[0].Status))
+		assert.Equal(t, "RESOLVED", string(issues[1].Status))
+	})
+
+	// Test case 4: Invalid issue type
+	t.Run("Invalid Issue Type", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/api/issues/search?type=INVALID_TYPE", nil)
+		req.Header.Set("Authorization", "Bearer staff_token")
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+
+		var response map[string]string
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Contains(t, response, "error")
+		assert.Equal(t, "Invalid issue type", response["error"])
+	})
+
+	// Test case 5: Invalid status
+	t.Run("Invalid Status", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/api/issues/search?status=INVALID_STATUS", nil)
+		req.Header.Set("Authorization", "Bearer staff_token")
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+
+		var response map[string]string
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Contains(t, response, "error")
+		assert.Equal(t, "Invalid status", response["error"])
+	})
+
+	// Test case 6: Database error
+	t.Run("Database Error", func(t *testing.T) {
+		mockDB.EXPECT().SearchIssues("POTHOLE", "NEW").Return(nil, errors.New("database error"))
+
+		req, _ := http.NewRequest("GET", "/api/issues/search?type=POTHOLE&status=NEW", nil)
+		req.Header.Set("Authorization", "Bearer staff_token")
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+		var response map[string]string
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Contains(t, response, "error")
+		assert.Equal(t, "Failed to search issues", response["error"])
+	})
 }
 
 func TestGetIssuesForMap(t *testing.T) {
@@ -860,17 +1017,17 @@ func TestResolutionTime(t *testing.T) {
 	assert.Equal(t, "1d 12h", resolutionTimeResponse["STREETLIGHT"])
 }
 
-// TestLoginHandler is a simplified login handler for testing that doesn't use bcrypt
-type TestLoginHandler struct {
+// MockLoginHandler is a simplified login handler for testing that doesn't use bcrypt
+type MockLoginHandler struct {
 	db database.DatabaseOperations
 }
 
-func NewTestLoginHandler(db database.DatabaseOperations) *TestLoginHandler {
-	return &TestLoginHandler{db: db}
+func NewMockLoginHandler(db database.DatabaseOperations) *MockLoginHandler {
+	return &MockLoginHandler{db: db}
 }
 
 // Login is a simplified login handler for testing that doesn't use bcrypt
-func (h *TestLoginHandler) Login(c *gin.Context) {
+func (h *MockLoginHandler) Login(c *gin.Context) {
 	var creds struct {
 		Username string `json:"username" binding:"required"`
 		Password string `json:"password" binding:"required"`
@@ -905,7 +1062,7 @@ func setupTestAuthRouter(t *testing.T) (*gin.Engine, *dbMock.MockDatabaseOperati
 	router := gin.Default()
 
 	// Set up a test router with our custom handler
-	testHandler := NewTestLoginHandler(mockDB)
+	testHandler := NewMockLoginHandler(mockDB)
 	
 	// Set up only the auth routes
 	api := router.Group("/api")
@@ -918,40 +1075,106 @@ func setupTestAuthRouter(t *testing.T) (*gin.Engine, *dbMock.MockDatabaseOperati
 func TestLogin(t *testing.T) {
 	router, mockDB := setupTestAuthRouter(t)
 
-	// Prepare mock data
-	loginPayload := map[string]string{
-		"username": "testuser",
-		"password": "testpassword",
-	}
+	// Test case 1: Successful login
+	t.Run("Successful Login", func(t *testing.T) {
+		// Prepare mock data
+		loginPayload := map[string]string{
+			"username": "testuser",
+			"password": "testpassword",
+		}
 
-	// Mock user retrieval
-	mockUser := &models.User{
-		Username:     "testuser",
-		PasswordHash: "not-important-for-test",
-		UserType:     "user",
-	}
+		// Mock user retrieval
+		mockUser := &models.User{
+			Username:     "testuser",
+			PasswordHash: "not-important-for-test",
+			UserType:     "user",
+		}
 
-	// Mock the database call to get the user
-	mockDB.EXPECT().GetUserByUsername("testuser").Return(mockUser, nil)
+		// Mock the database call to get the user
+		mockDB.EXPECT().GetUserByUsername("testuser").Return(mockUser, nil)
 
-	// Create request
-	body, _ := json.Marshal(loginPayload)
-	req, _ := http.NewRequest("POST", "/api/auth/login", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
+		// Create request
+		body, _ := json.Marshal(loginPayload)
+		req, _ := http.NewRequest("POST", "/api/auth/login", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
 
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, http.StatusOK, w.Code)
 
-	var response map[string]string
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal response: %v", err)
-	}
+		var response map[string]string
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		if err != nil {
+			t.Fatalf("Failed to unmarshal response: %v", err)
+		}
 
-	assert.Equal(t, "test_token", response["token"])
-	assert.Equal(t, "user", response["user_type"])
+		assert.Equal(t, "test_token", response["token"])
+		assert.Equal(t, "user", response["user_type"])
+	})
+
+	// Test case 2: Invalid JSON body
+	t.Run("Invalid JSON Body", func(t *testing.T) {
+		// Create request with invalid JSON
+		req, _ := http.NewRequest("POST", "/api/auth/login", bytes.NewBuffer([]byte("invalid json")))
+		req.Header.Set("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Contains(t, response, "error")
+	})
+
+	// Test case 3: Missing required fields
+	t.Run("Missing Required Fields", func(t *testing.T) {
+		// Create login request with missing password
+		loginData := map[string]string{
+			"username": "testuser",
+			// missing password
+		}
+		
+		jsonData, _ := json.Marshal(loginData)
+		req, _ := http.NewRequest("POST", "/api/auth/login", bytes.NewBuffer(jsonData))
+		req.Header.Set("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	// Test case 4: User not found
+	t.Run("User Not Found", func(t *testing.T) {
+		// Prepare login payload
+		loginPayload := map[string]string{
+			"username": "nonexistent",
+			"password": "password123",
+		}
+
+		// Mock database to return error
+		mockDB.EXPECT().GetUserByUsername("nonexistent").Return(nil, errors.New("user not found"))
+
+		// Create request
+		body, _ := json.Marshal(loginPayload)
+		req, _ := http.NewRequest("POST", "/api/auth/login", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+
+		var response map[string]string
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Contains(t, response, "error")
+		assert.Equal(t, "Invalid credentials", response["error"])
+	})
 }
 
 // TestRegisterHandler is a simplified register handler for testing

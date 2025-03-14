@@ -32,6 +32,10 @@ type DatabaseOperations interface {
 var _ DatabaseOperations = (*DB)(nil)
 
 func (db *DB) CreateIssue(issue *models.IssueCreate) (int64, error) {
+	if issue == nil {
+		return 0, fmt.Errorf("issue cannot be nil")
+	}
+	
 	var id int64
 	err := db.QueryRow(`
         INSERT INTO issues (type, description, latitude, longitude, images, reported_by, status)
@@ -114,6 +118,10 @@ func (db *DB) GetIssuesForMap() ([]*models.Issue, error) {
 }
 
 func (db *DB) UpdateIssue(id int64, update *models.IssueUpdate) error {
+	if update == nil {
+		return fmt.Errorf("update cannot be nil")
+	}
+	
 	result, err := db.Exec(`
         UPDATE issues
         SET status = COALESCE($1, status),
@@ -140,6 +148,11 @@ func (db *DB) UpdateIssue(id int64, update *models.IssueUpdate) error {
 }
 
 func (db *DB) ListIssues(page, pageSize int) ([]*models.Issue, error) {
+	// Use default pageSize if 0 is provided
+	if pageSize == 0 {
+		pageSize = 10 // Default page size
+	}
+
 	offset := (page - 1) * pageSize
 	rows, err := db.Query(`
         SELECT id, type, status, description, latitude, longitude,
@@ -184,6 +197,20 @@ func (db *DB) ListIssues(page, pageSize int) ([]*models.Issue, error) {
 }
 
 func (db *DB) SearchIssues(issueType, status string) ([]*models.Issue, error) {
+	// Handle invalid issue type
+	if issueType != "" && issueType != "POTHOLE" && issueType != "STREET_LIGHT" && 
+	   issueType != "GRAFFITI" && issueType != "ANTI_SOCIAL" && 
+	   issueType != "FLY_TIPPING" && issueType != "BLOCKED_DRAIN" {
+		// Invalid issue type, just return empty result
+		return []*models.Issue{}, nil
+	}
+
+	// Handle invalid status
+	if status != "" && status != "NEW" && status != "IN_PROGRESS" && status != "RESOLVED" {
+		// Invalid status, just return empty result
+		return []*models.Issue{}, nil
+	}
+
 	rows, err := db.Query(`
         SELECT id, type, status, description, latitude, longitude,
                images::text[], reported_by, assigned_to, created_at, updated_at
@@ -278,6 +305,12 @@ func (db *DB) GetAverageResolutionTime() (map[string]string, error) {
 		days := int(avgTime) / 86400
 		hours := (int(avgTime) % 86400) / 3600
 		resolutionTime[issueType] = fmt.Sprintf("%dd %dh", days, hours)
+	}
+
+	// Check if we've found any resolved issues so far
+	if len(resolutionTime) == 0 {
+		// No resolved issues found, return empty map
+		return resolutionTime, nil
 	}
 
 	// Get overall average resolution time
@@ -647,7 +680,7 @@ func (db *DB) GetIssueAnalytics(startDate, endDate string) (map[string]interface
 	}
 
 	return map[string]interface{}{
-		"total_issues":     totalIssues,
+		"total":           totalIssues,
 		"issues_by_type":   issuesByType,
 		"issues_by_status": issuesByStatus,
 		"issues_by_month":  issuesByMonth,
