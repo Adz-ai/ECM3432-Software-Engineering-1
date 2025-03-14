@@ -34,6 +34,12 @@ func (r *RealAuth) StaffOnly() gin.HandlerFunc {
 
 var secretKey = []byte(os.Getenv("JWT_SECRET"))
 
+// SetSecretKeyForTesting allows tests to set a consistent secret key
+// This should only be used in test code
+func SetSecretKeyForTesting(secret string) {
+	secretKey = []byte(secret)
+}
+
 type UserClaims struct {
 	UserID   string `json:"user_id"`
 	UserType string `json:"user_type"` // "public" or "staff"

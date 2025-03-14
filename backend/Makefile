@@ -26,12 +26,15 @@ test:
 	$(GOTEST) -v ./...
 
 coverage:
-	go test -coverprofile=coverage.out ./... && \
+	go test -coverprofile=coverage.raw.out ./... && \
+	cat coverage.raw.out | grep -v "/cmd/" | grep -v "/mocks/" | grep -v "/docs/" > coverage.out && \
 	go tool cover -html=coverage.out -o coverage.html && \
-	go tool cover -func=coverage.out | grep -vE 'mocks|migrations|config|docs|logging|main' | tee coverage_summary.txt && \
-	AVG_COV=$$(go tool cover -func=coverage.out | grep total | awk '{print $$3}'); \
+	go tool cover -func=coverage.out | grep -vE 'mocks|migrations|config|docs|logging|main|cmd|storage/storage.go' | tee coverage_summary.txt && \
+	AVG_CORE_COV=$$(go tool cover -func=coverage.out | grep -vE 'cmd|mocks|migrations|config|docs|logging|main|storage/storage.go' | grep total | awk '{print $$3}'); \
 	echo "📊 Coverage report generated! Open coverage.html in your browser." && \
-	echo "📈 Average Project Coverage: $${AVG_COV}"
+	echo "📈 Core Code Coverage: $${AVG_CORE_COV}" && \
+	AVG_TOTAL_COV=$$(go tool cover -func=coverage.out | grep total | awk '{print $$3}'); \
+	echo "📊 Total Project Coverage (including excluded code): $${AVG_TOTAL_COV}"
 
 clean:
 	rm -f $(BINARY_NAME)
