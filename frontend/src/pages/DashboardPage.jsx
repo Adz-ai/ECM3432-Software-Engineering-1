@@ -105,14 +105,14 @@ const transformAnalyticsData = (apiResponse) => {
   }));
 
   // Calculate resolved and pending issues
-  const totalIssues = apiResponse.total_issues || 0;
+  const totalIssues = apiResponse.total || apiResponse.total_issues || 0;
   const resolvedCount =
-    (apiResponse.issues_by_status && apiResponse.issues_by_status.RESOLVED);
+    (apiResponse.issues_by_status && apiResponse.issues_by_status.RESOLVED) || 0;
 
   return {
     totalIssues: totalIssues,
     resolvedIssues: resolvedCount,
-    pendingIssues: totalIssues - resolvedCount,
+    pendingIssues: Math.max(0, totalIssues - resolvedCount),
     avgResolutionTime: apiResponse.average_resolution_time || 'N/A',
     issuesByType,
     issuesByStatus,
