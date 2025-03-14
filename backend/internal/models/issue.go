@@ -50,7 +50,7 @@ type Issue struct {
 	} `json:"location"`
 	Images     []string  `json:"images" db:"images"`
 	ReportedBy string    `json:"reported_by" db:"reported_by"`
-	AssignedTo *string   `json:"assigned_to,omitempty" db:"assigned_to"`
+	AssignedTo *int64    `json:"assigned_to,omitempty" db:"assigned_to"`
 	CreatedAt  time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at" db:"updated_at"`
 }

@@ -21,8 +21,10 @@ type TestDBContainer struct {
 func StartTestDB() (*DB, func(), error) {
 	ctx := context.Background()
 
-	// Configure PostgreSQL test container
+	// Configure PostgreSQL test container with a random name to ensure isolation
+	containerName := fmt.Sprintf("test-postgres-%d", time.Now().UnixNano())
 	req := testcontainers.ContainerRequest{
+		Name:         containerName,
 		Image:        "postgres:15",
 		ExposedPorts: []string{"5432/tcp"},
 		Env: map[string]string{

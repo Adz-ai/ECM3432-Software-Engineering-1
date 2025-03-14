@@ -84,11 +84,26 @@ func (mr *MockDatabaseOperationsMockRecorder) GetAverageResolutionTime() *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAverageResolutionTime", reflect.TypeOf((*MockDatabaseOperations)(nil).GetAverageResolutionTime))
 }
 
+// GetEngineerByID mocks base method.
+func (m *MockDatabaseOperations) GetEngineerByID(id int64) (*models.Engineer, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEngineerByID", id)
+	ret0, _ := ret[0].(*models.Engineer)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEngineerByID indicates an expected call of GetEngineerByID.
+func (mr *MockDatabaseOperationsMockRecorder) GetEngineerByID(id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEngineerByID", reflect.TypeOf((*MockDatabaseOperations)(nil).GetEngineerByID), id)
+}
+
 // GetEngineerPerformance mocks base method.
-func (m *MockDatabaseOperations) GetEngineerPerformance() (map[string]interface{}, error) {
+func (m *MockDatabaseOperations) GetEngineerPerformance() ([]*models.EngineerPerformance, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetEngineerPerformance")
-	ret0, _ := ret[0].(map[string]interface{})
+	ret0, _ := ret[0].([]*models.EngineerPerformance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -157,6 +172,21 @@ func (m *MockDatabaseOperations) GetUserByUsername(username string) (*models.Use
 func (mr *MockDatabaseOperationsMockRecorder) GetUserByUsername(username any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByUsername", reflect.TypeOf((*MockDatabaseOperations)(nil).GetUserByUsername), username)
+}
+
+// ListEngineers mocks base method.
+func (m *MockDatabaseOperations) ListEngineers() ([]*models.Engineer, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListEngineers")
+	ret0, _ := ret[0].([]*models.Engineer)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListEngineers indicates an expected call of ListEngineers.
+func (mr *MockDatabaseOperationsMockRecorder) ListEngineers() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEngineers", reflect.TypeOf((*MockDatabaseOperations)(nil).ListEngineers))
 }
 
 // ListIssues mocks base method.
