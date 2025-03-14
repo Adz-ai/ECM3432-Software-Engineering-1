@@ -278,7 +278,7 @@ func (db *DB) GetAverageResolutionTime() (map[string]string, error) {
 	// Get per-type resolution times
 	typeQuery := `
 		SELECT type, 
-		       COALESCE(AVG(EXTRACT(EPOCH FROM (updated_at - created_at))), 0) AS avg_resolution_time
+		       COALESCE(AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))), 0) AS avg_resolution_time
 		FROM issues
 		WHERE status = 'RESOLVED'
 		GROUP BY type;
@@ -315,7 +315,7 @@ func (db *DB) GetAverageResolutionTime() (map[string]string, error) {
 
 	// Get overall average resolution time
 	overallQuery := `
-		SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (updated_at - created_at))), 0) AS overall_avg_resolution_time
+		SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))), 0) AS overall_avg_resolution_time
 		FROM issues
 		WHERE status = 'RESOLVED';
 	`

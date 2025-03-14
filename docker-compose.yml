@@ -40,20 +40,17 @@ services:
     networks:
       - chalkstone-network
 
-  # Create MinIO bucket on startup
+  # Create MinIO bucket on startup and upload sample images
   minio-setup:
     image: minio/mc:latest
     container_name: chalkstone-minio-setup
     depends_on:
       minio:
         condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      /usr/bin/mc config host add myminio http://minio:9000 minioadmin minioadmin;
-      /usr/bin/mc mb myminio/issues-bucket;
-      /usr/bin/mc anonymous set public myminio/issues-bucket;
-      exit 0;
-      "
+    volumes:
+      - ./sample-images:/sample-images
+      - ./minio-setup.sh:/minio-setup.sh
+    entrypoint: ["sh", "/minio-setup.sh"]
     networks:
       - chalkstone-network
 
