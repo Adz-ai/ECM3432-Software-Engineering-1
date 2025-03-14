@@ -28,7 +28,7 @@ test:
 coverage:
 	go test -coverprofile=coverage.out ./... && \
 	go tool cover -html=coverage.out -o coverage.html && \
-	go tool cover -func=coverage.out | grep -vE 'mocks|migrations|config|docs|logging|postgres|main' | tee coverage_summary.txt && \
+	go tool cover -func=coverage.out | grep -vE 'mocks|migrations|config|docs|logging|main' | tee coverage_summary.txt && \
 	AVG_COV=$$(go tool cover -func=coverage.out | grep total | awk '{print $$3}'); \
 	echo "📊 Coverage report generated! Open coverage.html in your browser." && \
 	echo "📈 Average Project Coverage: $${AVG_COV}"
