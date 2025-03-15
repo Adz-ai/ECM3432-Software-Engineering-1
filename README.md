@@ -52,6 +52,7 @@ chalkstone-council-system/
 #### Forms & Validation
 - **Formik**: For form handling and validation
 - **Yup**: Schema-based form validation library
+- **Custom Validators**: Specialized input validation functions with test coverage
 
 #### Networking
 - **Axios**: Promise-based HTTP client for API requests
@@ -71,9 +72,10 @@ chalkstone-council-system/
 - **SQL Migrations**: For database schema versioning
 
 #### Security
-- **JWT**: JSON Web Tokens for authentication & authorization
+- **JWT**: JSON Web Tokens for authentication & authorization with role-based access control
 - **Bcrypt**: Secure password hashing
 - **CORS**: Cross-Origin Resource Sharing configuration
+- **Role-Based Access**: Staff/Admin and Regular User permission levels
 
 #### API Development
 - **Swagger**: API documentation and OpenAPI specification
@@ -191,16 +193,42 @@ To deploy the Chalkstone Council Issue Reporting System using Docker Compose, fo
 - `POST /api/issues` – Report an issue (Authenticated)
 - `GET /api/issues/{id}` – Get issue details (Authenticated)
 - `PUT /api/issues/{id}` – Update issue status (Staff Only)
-- `GET /api/issues` – List all issues (Authenticated)
+- `GET /api/issues` – List all issues (Staff Only)
 - `GET /api/issues/map` – Get issues for map view (Public)
-- `GET /api/issues/search` – Search issues by filters (Authenticated)
+- `GET /api/issues/search` – Search issues by filters (Staff Only)
 - `GET /api/issues/analytics` – Get issue analytics (Staff Only)
+
+### Engineers
+- `GET /api/engineers` – List all engineers (Staff Only)
+- `GET /api/engineers/{id}` – Get engineer details (Staff Only)
+
+### Analytics
+- `GET /api/analytics/engineers` – Get engineer performance metrics (Staff Only)
+- `GET /api/analytics/resolution-time` – Get issue resolution time metrics (Staff Only)
 
 ### Image Handling
 - `POST /api/issues` – Upload images with multipart form data
 - MinIO endpoint for image retrieval
 
 ## 🛠️ Development
+
+### Testing Strategy
+
+The Chalkstone Council Issue Reporting System follows a comprehensive testing strategy outlined in detail in the [TESTING_STRATEGY.md](TESTING_STRATEGY.md) file. Our approach includes multiple testing methodologies to ensure code quality and application reliability.
+
+#### Frontend Testing
+
+- **Jest & React Testing Library**: For component, integration, and unit testing
+- **Snapshot Testing**: To detect unexpected UI changes
+- **User Event Simulation**: For testing interaction flows
+- **Mock Service Worker**: For API mocking
+
+#### Backend Testing
+
+- **Go Testing Framework**: Built-in testing utilities
+- **GoMock**: Powerful mocking framework for interface testing
+- **Testcontainers**: Real database testing with isolated Docker containers
+- **Integration Tests**: To verify system component interactions
 
 ### Running Tests
 

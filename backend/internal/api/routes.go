@@ -23,13 +23,13 @@ func SetupRoutes(r *gin.Engine, db database.DatabaseOperations, auth middleware.
 		authGroup.POST("/register", handler.Register)
 	}
 
-	// Public routes
+	// Issues - Public routes
 	public := api.Group("/issues")
 	{
 		public.GET("/map", handler.GetIssuesForMap)
 	}
 
-	// Authenticated routes
+	// Issues - Authenticated routes
 	authenticatedUser := api.Group("/issues")
 	authenticatedUser.Use(auth.AuthMiddleware())
 	{
@@ -38,7 +38,7 @@ func SetupRoutes(r *gin.Engine, db database.DatabaseOperations, auth middleware.
 
 	}
 
-	// Staff Protected routes
+	// Issues - Staff Protected routes
 	staff := api.Group("/issues")
 	staff.Use(auth.AuthMiddleware(), auth.StaffOnly())
 	{
@@ -48,15 +48,15 @@ func SetupRoutes(r *gin.Engine, db database.DatabaseOperations, auth middleware.
 		staff.GET("/analytics", handler.GetIssueAnalytics)
 	}
 
-	// Engineers endpoints
+	// Engineers - Staff Protected routes
 	engineers := api.Group("/engineers")
-	engineers.Use(auth.AuthMiddleware())
+	engineers.Use(auth.AuthMiddleware(), auth.StaffOnly())
 	{
 		engineers.GET("", handler.ListEngineers)
 		engineers.GET("/:id", handler.GetEngineer)
 	}
 
-	// Analytics endpoints
+	// Analytics - Staff Protected routes
 	analytics := api.Group("/analytics")
 	analytics.Use(auth.AuthMiddleware(), auth.StaffOnly())
 	{
