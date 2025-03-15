@@ -8,6 +8,11 @@ import (
 )
 
 func SetupRoutes(r *gin.Engine, db database.DatabaseOperations, auth middleware.Authenticator) {
+	// Add health check endpoint
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
+
 	handler := NewHandler(db)
 	api := r.Group("/api")
 

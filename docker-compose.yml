@@ -1,67 +1,91 @@
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:14-alpine
+    image: postgres:17
     container_name: chalkstone-postgres
+    restart: unless-stopped
+    env_file: .env.postgres
     environment:
-      - POSTGRES_USER=chalkstone
-      - POSTGRES_PASSWORD=chalkstone_password
-      - POSTGRES_DB=chalkstone
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data/pgdata
     ports:
-      - "5432:5432"
+      # Only expose to localhost in production
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U chalkstone"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
     networks:
       - chalkstone-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
   # MinIO Object Storage
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-03-12T18-04-18Z-cpuv1
     container_name: chalkstone-minio
+    restart: unless-stopped
+    env_file: .env.minio
     environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:9090
     command: server /data --console-address ":9090"
     volumes:
       - minio_data:/data
     ports:
-      - "9000:9000"
-      - "9090:9090"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9090:9090"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 10s
+      test: ["CMD", "/bin/sh", "-c", "/usr/bin/mc ready local"]
+      interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 20s
     networks:
       - chalkstone-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   # Create MinIO bucket on startup and upload sample images
   minio-setup:
-    image: minio/mc:latest
+    image: minio/mc:RELEASE.2025-03-12T17-29-24Z-cpuv1
     container_name: chalkstone-minio-setup
+    restart: on-failure
     depends_on:
       minio:
         condition: service_healthy
     volumes:
-      - ./sample-images:/sample-images
-      - ./minio-setup.sh:/minio-setup.sh
+      - ./sample-images:/sample-images:ro
+      - ./minio-setup.sh:/minio-setup.sh:ro
     entrypoint: ["sh", "/minio-setup.sh"]
     networks:
       - chalkstone-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 64M
 
   # Backend API
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      args:
+        ENVIRONMENT: production
     container_name: chalkstone-backend
+    restart: unless-stopped
+    env_file: ./backend/.env.docker
     ports:
-      - "8080:8080"
+      - "${BACKEND_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -69,24 +93,52 @@ services:
         condition: service_completed_successfully
     networks:
       - chalkstone-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
-  # Frontend Web Application
+  # Frontend Web Application with Nginx
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: chalkstone-frontend
+    restart: unless-stopped
+    env_file: ./frontend/.env.docker
     ports:
-      - "3000:80"
+      - "${FRONTEND_PORT:-3000}:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - chalkstone-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 networks:
   chalkstone-network:
     driver: bridge
+    # Enable this for better isolation in production
+    # internal: true
 
 volumes:
   postgres_data:
+    # Using named volumes instead of bind mounts for portability
   minio_data:

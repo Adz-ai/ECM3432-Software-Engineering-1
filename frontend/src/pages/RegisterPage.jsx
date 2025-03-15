@@ -12,6 +12,7 @@ const RegisterPage = () => {
     password: '',
     confirmPassword: '',
     is_staff: false,
+    staff_secret: '',
   });
 
   const [error, setError] = useState('');
@@ -44,6 +45,13 @@ const RegisterPage = () => {
       return;
     }
 
+    // Only validate that the staff secret is provided if user is registering as staff
+    // The actual validation will happen on the server side
+    if (formData.is_staff && !formData.staff_secret) {
+      setError('Staff secret phrase is required');
+      return;
+    }
+
     setError('');
     setLoading(true);
 
@@ -53,6 +61,8 @@ const RegisterPage = () => {
         username: formData.username,
         password: formData.password,
         is_staff: formData.is_staff,
+        // Send the staff secret to the backend for server-side validation
+        staff_secret: formData.is_staff ? formData.staff_secret : undefined
       });
 
       // Navigate to login page after successful registration
@@ -124,6 +134,24 @@ const RegisterPage = () => {
               Register as council staff member
             </label>
           </div>
+
+          {formData.is_staff && (
+            <div className="form-group">
+              <label htmlFor="staff_secret">Staff Secret Phrase</label>
+              <input
+                type="password"
+                id="staff_secret"
+                name="staff_secret"
+                value={formData.staff_secret}
+                onChange={handleChange}
+                required={formData.is_staff}
+                placeholder="Enter the staff secret phrase"
+              />
+              <small className="form-text text-muted">
+                A secret phrase is required to register as staff. This helps ensure only authorized personnel can access staff features.
+              </small>
+            </div>
+          )}
 
           <button
             type="submit"

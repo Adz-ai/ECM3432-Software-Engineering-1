@@ -63,20 +63,4 @@ install-tools:
 	go install go.uber.org/mock/mockgen@latest
 	go get github.com/testcontainers/testcontainers-go
 
-.PHONY: docker-env-file
-docker-env-file:
-	touch .env
-	echo "DB_HOST=postgres" >> .env
-	echo "DB_PORT=5432" >> .env
-	echo "DB_USER=chalkstone" >> .env
-	echo "DB_PASSWORD=chalkstone_password" >> .env
-	echo "DB_NAME=chalkstone" >> .env
-	echo "PORT=8080" >> .env
-	echo "JWT_SECRET=y35ada99f2f118c2cde7cf397a04f320682ad41f0abca7ce735ddf7ef1fdcf7eb15d2cc62a3f15bf1d6824402bb8bf7c3cba7be1bccb392ff2ffd25ffbc227b7777063f5781e05ab6ec39ec770a740a2286009a209f485fae6e20d937307668740fd48dd746b28274e633bc479633ad154bce920db645b5d771023691c1b1b4103729ffcdca860ebbe2910c1f2c65a1f2e01e07d9a0218f0ea9fc9f98ed84b5fbcd30219c67698bb4224e72f2bb7789687d095fbbf164f5f0aab710a1dcec039bbfac7d7ec7e74cdebe99409e53f0ffae7622dd0ae7bd2836508f233a9efcc0ae793e5a90a8401f9614d6e6b839057ab3290489fa67db5fda664a49e128177662" >> .env
-	echo "MINIO_ENDPOINT=minio:9000" >> .env
-	echo "MINIO_ACCESS_KEY=minioadmin" >> .env
-	echo "MINIO_SECRET_KEY=minioadmin" >> .env
-	echo "MINIO_BUCKET=issues-bucket" >> .env
-	echo "GIN_MODE=release" >> .env
-
 

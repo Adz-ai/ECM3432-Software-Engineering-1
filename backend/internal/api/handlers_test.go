@@ -6,6 +6,7 @@ import (
 	dbMock "chalkstone.council/internal/database/mocks"
 	authMock "chalkstone.council/internal/middleware/mocks"
 	"chalkstone.council/internal/models"
+	"os"
 
 	"encoding/json"
 	"errors"
@@ -1486,11 +1487,12 @@ func TestRegisterDatabaseError(t *testing.T) {
 func TestRegisterWithStaffUser(t *testing.T) {
 	router, mockDB, _ := setupTestRouter(t)
 
-	// Prepare mock data for staff registration
+	// Prepare mock data for staff registration with the required secret
 	registerPayload := map[string]interface{}{
-		"username":  "staffuser",
-		"password":  "staffpass",
-		"is_staff": true,
+		"username":     "staffuser",
+		"password":     "staffpass",
+		"is_staff":     true,
+		"staff_secret": "citycouncilstaff2023",
 	}
 
 	// Mock the database call for staff user creation (with any password hash)
@@ -1505,4 +1507,71 @@ func TestRegisterWithStaffUser(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+// TestRegisterWithInvalidStaffSecret tests that staff registration fails when an invalid secret is provided
+func TestRegisterWithInvalidStaffSecret(t *testing.T) {
+	router, _, _ := setupTestRouter(t)
+
+	// Prepare mock data for staff registration with invalid secret
+	registerPayload := map[string]interface{}{
+		"username":     "staffuser",
+		"password":     "staffpass",
+		"is_staff":     true,
+		"staff_secret": "wrongsecret", // Invalid secret
+	}
+
+	// Create request
+	body, _ := json.Marshal(registerPayload)
+	req, _ := http.NewRequest("POST", "/api/auth/register", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Should fail with bad request due to invalid secret
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	// Check response contains error message
+	var response map[string]string
+	json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Contains(t, response["error"], "Invalid staff secret")
+}
+
+// TestRegisterStaffWithEnvVar tests staff registration with a secret provided via environment variable
+func TestRegisterStaffWithEnvVar(t *testing.T) {
+	router, mockDB, _ := setupTestRouter(t)
+
+	// Set environment variable for staff secret
+	originalValue := os.Getenv("STAFF_SECRET")
+	os.Setenv("STAFF_SECRET", "custom_env_secret")
+	// Restore the original value when the test finishes
+	defer os.Setenv("STAFF_SECRET", originalValue)
+
+	// Prepare mock data for staff registration with the secret from env var
+	registerPayload := map[string]interface{}{
+		"username":     "staffuser",
+		"password":     "staffpass",
+		"is_staff":     true,
+		"staff_secret": "custom_env_secret", // Matches the environment variable
+	}
+
+	// Mock the database call for staff user creation (with any password hash)
+	mockDB.EXPECT().CreateUser("staffuser", gomock.Any(), "staff").Return(nil)
+
+	// Create request
+	body, _ := json.Marshal(registerPayload)
+	req, _ := http.NewRequest("POST", "/api/auth/register", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Should succeed
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Check response contains token
+	var response map[string]string
+	json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Contains(t, response, "token")
 }

@@ -277,9 +277,10 @@ func TestRegisterStaffUser(t *testing.T) {
 	
 	// Create a valid registration payload for staff user
 	reg := map[string]interface{}{
-		"username": username,
-		"password": "password123",
-		"is_staff": true,
+		"username":     username,
+		"password":     "password123",
+		"is_staff":     true,
+		"staff_secret": "citycouncilstaff2023",
 	}
 	body, _ := json.Marshal(reg)
 	

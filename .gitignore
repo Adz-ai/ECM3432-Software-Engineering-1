@@ -21,8 +21,14 @@
 go.work
 go.work.sum
 
-# env file
+# Environment files
 .env
+.env.*
+!.env.*.template
+!.env.template
+!.env.example
+!backend/.env.docker
+!frontend/.env.docker
 
 .idea
 
@@ -125,3 +131,7 @@ coverage_summary.txt
 .DS_Store
 /.idea/
 .idea
+
+# Docker data directories
+/data/
+docker-volumes/

@@ -3,6 +3,7 @@ package api
 import (
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"chalkstone.council/internal/database"
@@ -531,9 +532,10 @@ func (h *Handler) Login(c *gin.Context) {
 // @Router /auth/register [post]
 func (h *Handler) Register(c *gin.Context) {
 	var reg struct {
-		Username string `json:"username" binding:"required"`
-		Password string `json:"password" binding:"required"`
-		IsStaff  bool   `json:"is_staff"`
+		Username    string `json:"username" binding:"required"`
+		Password    string `json:"password" binding:"required"`
+		IsStaff     bool   `json:"is_staff"`
+		StaffSecret string `json:"staff_secret"`
 	}
 
 	if err := c.ShouldBindJSON(&reg); err != nil {
@@ -549,8 +551,31 @@ func (h *Handler) Register(c *gin.Context) {
 		return
 	}
 
+	// Staff registration validation
 	userType := "public"
 	if reg.IsStaff {
+		// Require staff secret for staff registration
+		if reg.StaffSecret == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Staff secret is required for staff registration"})
+			return
+		}
+		
+		// Get staff secret from environment variable with fallback for development
+		staffSecret := os.Getenv("STAFF_SECRET")
+		if staffSecret == "" {
+			// Fallback secret for development only
+			// In production, this should always come from an environment variable
+			staffSecret = "citycouncilstaff2023"
+			log.Printf("WARNING: STAFF_SECRET environment variable not set, using fallback value")
+		}
+		
+		// Use a constant-time comparison to prevent timing attacks
+		if !utils.SecureCompare(reg.StaffSecret, staffSecret) {
+			// Use same error message and delay to prevent user enumeration
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid staff secret"})
+			return
+		}
+		
 		userType = "staff"
 	}
 

@@ -1,6 +1,6 @@
 // src/pages/DashboardPage.jsx
 
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import { analyticsService, issuesService } from '../services/api';
@@ -136,129 +136,131 @@ const DashboardPage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
 
-  useEffect(() => {
-    if (currentUser && isStaff()) {
-      const fetchDashboardData = async () => {
-        try {
-          setLoading(true);
+  // Create a memoized fetchDashboardData function that can be reused
+  const fetchDashboardData = useCallback(async () => {
+    if (!currentUser || !isStaff()) return;
+    
+    try {
+      setLoading(true);
 
-          // Get default date range (last 30 days)
-          const endDate = new Date().toISOString().split('T')[0];
-          const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split('T')[0];
+      // Get default date range (last 30 days)
+      const endDate = new Date().toISOString().split('T')[0];
+      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0];
 
-          setDateRange({ startDate, endDate });
+      setDateRange({ startDate, endDate });
 
-          // Fetch analytics data
-          try {
-            const analyticsResponse = await analyticsService.getIssueAnalytics(
-              startDate,
-              endDate
-            );
-            console.log('Analytics API response:', analyticsResponse.data);
+      // Fetch analytics data
+      try {
+        const analyticsResponse = await analyticsService.getIssueAnalytics(
+          startDate,
+          endDate
+        );
+        console.log('Analytics API response:', analyticsResponse.data);
 
-            // Transform the API response to the format expected by the dashboard
-            const transformedData = transformAnalyticsData(analyticsResponse.data);
-            console.log('Transformed analytics data:', transformedData);
+        // Transform the API response to the format expected by the dashboard
+        const transformedData = transformAnalyticsData(analyticsResponse.data);
+        console.log('Transformed analytics data:', transformedData);
 
-            setAnalytics(transformedData);
-          } catch (analyticsError) {
-            console.error('Error fetching analytics:', analyticsError);
-            setAnalytics(transformAnalyticsData(null));
+        setAnalytics(transformedData);
+      } catch (analyticsError) {
+        console.error('Error fetching analytics:', analyticsError);
+        setAnalytics(transformAnalyticsData(null));
+      }
+
+      // Fetch engineer performance data
+      try {
+        const engineerResponse = await analyticsService.getEngineerPerformance();
+        console.log('Engineer performance response:', engineerResponse.data);
+        setEngineerData(engineerResponse.data || []);
+      } catch (engineerError) {
+        console.error('Error fetching engineer performance:', engineerError);
+        setEngineerData([]);
+      }
+
+      // Fetch resolution time data
+      try {
+        const resolutionTimeResponse = await analyticsService.getResolutionTime();
+        console.log('Resolution time response:', resolutionTimeResponse.data);
+        
+        // Store the resolution time data
+        if (resolutionTimeResponse.data) {
+          setResolutionTimeData(resolutionTimeResponse.data);
+          
+          // Update the analytics object with the overall resolution time as a string
+          if (typeof resolutionTimeResponse.data.OVERALL === 'string') {
+            setAnalytics(prev => ({
+              ...prev,
+              avgResolutionTime: resolutionTimeResponse.data.OVERALL
+            }));
           }
-
-          // Fetch engineer performance data
-          try {
-            const engineerResponse = await analyticsService.getEngineerPerformance();
-            console.log('Engineer performance response:', engineerResponse.data);
-            setEngineerData(engineerResponse.data || []);
-          } catch (engineerError) {
-            console.error('Error fetching engineer performance:', engineerError);
-            setEngineerData([]);
-          }
-
-          // Fetch resolution time data
-          try {
-            const resolutionTimeResponse = await analyticsService.getResolutionTime();
-            console.log('Resolution time response:', resolutionTimeResponse.data);
-            
-            // Store the resolution time data
-            if (resolutionTimeResponse.data) {
-              setResolutionTimeData(resolutionTimeResponse.data);
-              
-              // Update the analytics object with the overall resolution time as a string
-              if (typeof resolutionTimeResponse.data.OVERALL === 'string') {
-                setAnalytics(prev => ({
-                  ...prev,
-                  avgResolutionTime: resolutionTimeResponse.data.OVERALL
-                }));
-              }
-            }
-          } catch (resolutionTimeError) {
-            console.error('Error fetching resolution time:', resolutionTimeError);
-            setResolutionTimeData(null);
-          }
-
-          // Fetch open (NEW) issues
-          try {
-            const issuesResponse = await issuesService.getAllIssues(1, 20);
-            console.log('Issues API response:', issuesResponse.data);
-
-            // Determine the structure of the response and extract the issues array
-            let allIssues = [];
-            
-            console.log('Response data type:', typeof issuesResponse.data);
-            
-            if (Array.isArray(issuesResponse.data)) {
-              console.log('Data is an array');
-              allIssues = issuesResponse.data;
-            } else if (issuesResponse.data && typeof issuesResponse.data === 'object') {
-              if (Array.isArray(issuesResponse.data.data)) {
-                console.log('Data is an object with data array');
-                allIssues = issuesResponse.data.data;
-              } else if (Array.isArray(issuesResponse.data.issues)) {
-                console.log('Data is an object with issues array');
-                allIssues = issuesResponse.data.issues;
-              } else {
-                // If it's a single issue object
-                console.log('Data may be a single issue or unknown format');
-                if (issuesResponse.data.id) {
-                  allIssues = [issuesResponse.data];
-                }
-              }
-            }
-            
-            console.log('Extracted all issues:', allIssues);
-            
-            // Filter to only NEW status issues, being case-insensitive
-            const newIssues = allIssues.filter(issue => {
-              const status = issue.status || '';
-              return status.toUpperCase() === 'NEW';
-            });
-            
-            console.log('Filtered NEW issues:', newIssues);
-            setIssues(newIssues);
-            
-            if (newIssues.length === 0) {
-              console.warn('No NEW issues found. Check if issues have NEW status in the database.');
-            }
-          } catch (issuesError) {
-            console.error('Error fetching issues:', issuesError);
-            setIssues([]);
-          }
-        } catch (err) {
-          console.error('Dashboard error:', err);
-          setError('Failed to load dashboard data');
-        } finally {
-          setLoading(false);
         }
-      };
+      } catch (resolutionTimeError) {
+        console.error('Error fetching resolution time:', resolutionTimeError);
+        setResolutionTimeData(null);
+      }
 
-      fetchDashboardData();
+      // Get open issues (NEW status) for the table
+      try {
+        // First try to use the search endpoint to filter for NEW status
+        try {
+          const issuesResponse = await issuesService.searchIssues('', 'NEW');
+          console.log('Open issues response:', issuesResponse.data);
+          setIssues(issuesResponse.data || []);
+        } catch (searchError) {
+          console.warn('Search by status failed, falling back to filtering:', searchError);
+          // Fallback to getting all issues and filtering
+          const issuesResponse = await issuesService.getAllIssues(1, 10);
+          console.log('All issues response:', issuesResponse.data);
+          // Filter for NEW status manually
+          const openIssues = (issuesResponse.data || []).filter(issue => issue.status === 'NEW');
+          console.log('Filtered open issues:', openIssues);
+          setIssues(openIssues);
+        }
+      } catch (issuesError) {
+        console.error('Error fetching open issues:', issuesError);
+        setIssues([]);
+      }
+
+    } catch (error) {
+      console.error('Dashboard data fetch error:', error);
+      setError('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
     }
   }, [currentUser, isStaff]);
+
+  // Initial data fetch on component mount
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  // Set up visibility change listener to refresh data when user returns to the page
+  useEffect(() => {
+    // Function to handle visibility change
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('Dashboard page is visible again, refreshing data...');
+        setLastRefresh(Date.now()); // Trigger a refresh
+      }
+    };
+
+    // Add event listener for visibility change
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Clean up event listener when component unmounts
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  // Refresh data when lastRefresh changes (when the page becomes visible again)
+  useEffect(() => {
+    fetchDashboardData();
+  }, [lastRefresh, fetchDashboardData]);
 
   const handleDateRangeChange = async (e) => {
     const { name, value } = e.target;
@@ -711,7 +713,7 @@ const DashboardPage = () => {
               textAlign: 'center'
             }}>
               <Typography variant="body1" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                No open issues found
+                {loading ? 'Loading open issues...' : 'No open issues found'}
               </Typography>
             </Box>
           ) : (
@@ -751,6 +753,9 @@ const DashboardPage = () => {
                             } : issue.status === 'PENDING' ? {
                               bgcolor: alpha(theme.palette.warning.main, 0.1),
                               color: theme.palette.warning.dark
+                            } : issue.status === 'NEW' ? {
+                              bgcolor: alpha(theme.palette.info.main, 0.1),
+                              color: theme.palette.info.dark
                             } : {
                               bgcolor: alpha(theme.palette.grey[500], 0.1),
                               color: theme.palette.grey[700]

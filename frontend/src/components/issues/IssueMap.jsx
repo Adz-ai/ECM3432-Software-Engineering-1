@@ -9,7 +9,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { renderToString } from 'react-dom/server';
 
-// Import Material UI icons - using the same icons as in the HomePage
+// Material UI imports
 import { 
   Build as PotholeIcon, 
   WbIncandescent as StreetLightIcon,
@@ -18,6 +18,7 @@ import {
   Delete as FlyTippingIcon,
   Water as BlockedDrainIcon
 } from '@mui/icons-material';
+import { Checkbox, FormControlLabel, Paper } from '@mui/material';
 
 // Fix for marker icons in React-Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -69,6 +70,7 @@ const IssueMap = () => {
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showResolved, setShowResolved] = useState(false);
   const navigate = useNavigate();
 
   // Exeter city center coordinates
@@ -129,6 +131,35 @@ const IssueMap = () => {
 
   return (
     <div className="issue-map-container">
+      {/* Add a toggle control for showing/hiding resolved issues */}
+      <Paper 
+        elevation={3} 
+        className="map-controls" 
+        sx={{ 
+          padding: '8px 16px', 
+          borderRadius: '24px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          position: 'absolute',
+          top: '10px',
+          right: '10px',
+          zIndex: 1000,
+          backgroundColor: 'rgba(255, 255, 255, 0.9)'
+        }}
+      >
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={showResolved}
+              onChange={() => setShowResolved(!showResolved)}
+              color="primary"
+              size="small"
+            />
+          }
+          label="Resolved Issues"
+        />
+      </Paper>
+
       <MapContainer
         center={defaultCenter}
         zoom={defaultZoom}
@@ -149,15 +180,32 @@ const IssueMap = () => {
             console.warn('Issue missing valid location data:', issue);
             return null;
           }
+          
+          // Skip resolved issues unless showResolved is true
+          if (issue.status === 'RESOLVED' && !showResolved) {
+            return null;
+          }
 
+          // Use a different style for resolved issues (more transparent markers)
+          const isResolved = issue.status === 'RESOLVED';
+          const markerIcon = getMarkerIcon(issue.type);
+          
+          // Create a modified icon for resolved issues with reduced opacity
+          let iconToUse = markerIcon;
+          if (isResolved) {
+            // This is a simplified approach - ideally we'd modify the icon directly
+            // but for now we'll just use a visual indicator in the popup
+          }
+          
           return (
             <Marker
               key={issue.id || `marker-${index}`}
               position={[issue.location.latitude, issue.location.longitude]}
-              icon={getMarkerIcon(issue.type)}
+              icon={iconToUse}
+              opacity={isResolved ? 0.6 : 1}
             >
               <Popup>
-                <div className="issue-popup">
+                <div className={`issue-popup ${isResolved ? 'resolved-issue' : ''}`}>
                   <h3>{formatIssueType(issue.type)}</h3>
                   {issue.status && <IssueStatusBadge status={issue.status} />}
                   {issue.id ? (
@@ -178,6 +226,31 @@ const IssueMap = () => {
       </MapContainer>
 
       <style jsx>{`
+        .issue-map-container {
+          position: relative;
+        }
+        
+        .map-controls {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          /* Use a lower z-index to ensure it stays below the header/navigation */
+          z-index: 999;
+          background-color: white;
+          padding: 10px;
+          border-radius: 4px;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+          pointer-events: auto;
+        }
+        
+        .resolved-toggle {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 14px;
+          cursor: pointer;
+        }
+        
         .no-issues-overlay {
           position: absolute;
           top: 50%;
@@ -212,6 +285,10 @@ const IssueMap = () => {
           color: #dc3545;
           font-size: 0.875rem;
           margin-top: 0.5rem;
+        }
+        
+        .resolved-issue {
+          opacity: 0.7;
         }
       `}</style>
     </div>

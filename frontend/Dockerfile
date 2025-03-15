@@ -1,37 +1,97 @@
 # Build stage
-FROM node:23-alpine AS builder
+FROM node:20-alpine AS builder
 
-# Install make
-RUN apk update && apk add --no-cache make
+# No need for make anymore
 
 # Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json
+# Copy package.json and package-lock.json first (for better caching)
 COPY package*.json ./
 
-# Use npm install instead of npm ci to resolve dependency conflicts
-RUN npm install
+# Use npm ci for more reliable production builds
+RUN npm ci --only=production
 
-# Copy the source code
-COPY . .
+# Copy the configuration files needed for build
+COPY public ./public
+COPY .env.docker ./.env
 
-# Remove the .env file
-RUN rm .env
+# Copy the source code (leveraging Docker layer caching)
+COPY src ./src
 
-RUN make generate-env
-
-# Build the React application
+# Build with production optimizations
 RUN npm run build
 
 # Production stage
-FROM nginx:1.23-alpine
+FROM nginx:1.25-alpine
+
+# Create a custom nginx.conf for running as non-root user
+RUN echo '\
+daemon off;\
+worker_processes auto;\
+pid /tmp/nginx.pid;\
+\
+events {\
+    worker_connections 1024;\
+}\
+\
+http {\
+    include       /etc/nginx/mime.types;\
+    default_type  application/octet-stream;\
+\
+    sendfile        on;\
+    keepalive_timeout  65;\
+\
+    # Custom log paths that are writable by non-root\
+    access_log /tmp/nginx_access.log;\
+    error_log /tmp/nginx_error.log;\
+\
+    server {\
+        listen 80;\
+        root /usr/share/nginx/html;\
+        index index.html;\
+        \
+        # Support for SPA routing\
+        location / {\
+            try_files $uri $uri/ /index.html;\
+        }\
+        \
+        # Cache static assets\
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {\
+            expires 30d;\
+            add_header Cache-Control "public, no-transform";\
+        }\
+    }\
+}\
+' > /etc/nginx/nginx.conf
+
+# Remove default conf.d to avoid conflicts
+RUN rm -rf /etc/nginx/conf.d/*
 
 # Copy built assets from the builder stage
 COPY --from=builder /app/build /usr/share/nginx/html
 
+# Add non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Install wget for health check
+RUN apk add --no-cache wget
+
+# Create temp directories for nginx
+RUN mkdir -p /tmp
+
+# Update permissions
+RUN chown -R appuser:appgroup /var/cache/nginx /usr/share/nginx/html /tmp
+
+# Use non-root user
+USER appuser
+
 # Expose port
 EXPOSE 80
 
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Add health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget -qO- http://localhost:80/ || exit 1
+
+# Start Nginx using our custom configuration
+CMD ["nginx"]

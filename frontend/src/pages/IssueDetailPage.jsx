@@ -394,32 +394,40 @@ const IssueDetailPage = () => {
                 </Typography>
                 
                 <Grid container spacing={2} sx={{ mt: 1 }}>
-                  <Grid item xs={4} sm={3}>
-                    <Typography variant="body2" color="text.secondary">ID:</Typography>
-                  </Grid>
-                  <Grid item xs={8} sm={9}>
-                    <Typography variant="body1">{issue.id}</Typography>
-                  </Grid>
+                  {isStaff() && (
+                    <>
+                      <Grid item xs={4} sm={3}>
+                        <Typography variant="body2" color="text.secondary">ID:</Typography>
+                      </Grid>
+                      <Grid item xs={8} sm={9}>
+                        <Typography variant="body1">{issue.id}</Typography>
+                      </Grid>
+                    </>
+                  )}
                   
-                  <Grid item xs={4} sm={3}>
-                    <Typography variant="body2" color="text.secondary">Reported By:</Typography>
-                  </Grid>
-                  <Grid item xs={8} sm={9}>
-                    <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center' }}>
-                      <PersonIcon fontSize="small" sx={{ mr: 1, opacity: 0.7 }} />
-                      {issue.reported_by}
-                    </Typography>
-                  </Grid>
-                  
-                  <Grid item xs={4} sm={3}>
-                    <Typography variant="body2" color="text.secondary">Assigned To:</Typography>
-                  </Grid>
-                  <Grid item xs={8} sm={9}>
-                    <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center' }}>
-                      <EngineeringIcon fontSize="small" sx={{ mr: 1, opacity: 0.7 }} />
-                      {issue.assigned_to || 'Unassigned'}
-                    </Typography>
-                  </Grid>
+                  {isStaff() && (
+                    <>
+                      <Grid item xs={4} sm={3}>
+                        <Typography variant="body2" color="text.secondary">Reported By:</Typography>
+                      </Grid>
+                      <Grid item xs={8} sm={9}>
+                        <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center' }}>
+                          <PersonIcon fontSize="small" sx={{ mr: 1, opacity: 0.7 }} />
+                          {issue.reported_by}
+                        </Typography>
+                      </Grid>
+                      
+                      <Grid item xs={4} sm={3}>
+                        <Typography variant="body2" color="text.secondary">Assigned To:</Typography>
+                      </Grid>
+                      <Grid item xs={8} sm={9}>
+                        <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center' }}>
+                          <EngineeringIcon fontSize="small" sx={{ mr: 1, opacity: 0.7 }} />
+                          {issue.assigned_to || 'Unassigned'}
+                        </Typography>
+                      </Grid>
+                    </>
+                  )}
                   
                   <Grid item xs={4} sm={3}>
                     <Typography variant="body2" color="text.secondary">Reported On:</Typography>
