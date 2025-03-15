@@ -1,0 +1,154 @@
+@startuml "Issue Reporting Sequence"
+!theme plain
+
+participant "Citizen" as citizen
+participant "Council Staff" as staff
+participant "Engineer" as engineer
+box "Frontend" #LightBlue
+    participant "Issue Form" as issueForm
+    participant "Dashboard" as dashboard
+    participant "Issue Details" as issueDetails
+end box
+box "Backend" #LightGreen
+    participant "API Controller" as api
+    participant "Models" as models
+    database "PostgreSQL DB" as db
+end box
+box "Storage" #LightYellow
+    participant "Object Storage Service" as storage
+end box
+
+title "Sequence Diagram - Issue Reporting and Resolution Process"
+
+== Issue Reporting ==
+
+group Citizen Reports an Issue
+    citizen -> issueForm: Submits issue details (type, description,
+    note right: location, images)
+    
+    issueForm -> api: POST /issues (multipart/form-data)
+    activate api
+    
+    ' Handling image uploads first
+    api -> api: Process uploaded images
+    loop For each image
+        api -> storage: Upload image file
+        activate storage
+        storage -> storage: Generate unique filename
+        storage -> storage: Store image file
+        storage --> api: Return image URL/path
+        deactivate storage
+    end
+    
+    ' Create the issue with image references
+    api -> models: Create Issue with image URLs
+    models -> db: INSERT INTO issues
+    note right: With image references and location data
+    db --> models: Issue Created (id)
+    api --> issueForm: 201 Created (issue.id)
+    deactivate api
+    issueForm --> citizen: Confirmation Message
+    note right: Issue Status: NEW
+end
+
+== Issue Assignment ==
+
+group Council Staff Reviews and Assigns
+    staff -> dashboard: Opens Dashboard
+    dashboard -> api: GET /issues/search?status=NEW
+    activate api
+    api -> db: SELECT * FROM issues WHERE status = 'NEW'
+    db --> api: Issues List
+    api --> dashboard: 200 OK (issues)
+    deactivate api
+    
+    staff -> issueDetails: Views Issue Details
+    issueDetails -> api: GET /issues/{id}
+    activate api
+    api -> db: SELECT * FROM issues WHERE id = ?
+    db --> api: Issue Data with image URLs
+    
+    ' Retrieve images from storage
+    loop For each image URL
+        api -> storage: GET image
+        storage --> api: Image data
+    end
+    
+    api --> issueDetails: 200 OK (issue with images)
+    deactivate api
+    issueDetails --> staff: Display issue with images
+    
+    staff -> issueDetails: Assigns to Engineer
+    issueDetails -> api: PUT /issues/{id}
+    activate api
+    note right: {"status": "IN_PROGRESS", "assigned_to": engineerId}
+    api -> db: UPDATE issues
+    note right: SET status='IN_PROGRESS', assigned_to=? WHERE id=?
+    db --> api: Update Success
+    api --> issueDetails: 200 OK
+    deactivate api
+    issueDetails --> staff: Success Message
+    note right: Issue Status: IN_PROGRESS
+end
+
+== Issue Resolution ==
+
+group Engineer Resolves the Issue
+    engineer -> issueDetails: Views Assigned Issue
+    issueDetails -> api: GET /issues/{id}
+    activate api
+    api -> db: SELECT * FROM issues WHERE id = ?
+    db --> api: Issue Data with image URLs
+    
+    ' Retrieve images from storage
+    loop For each image URL
+        api -> storage: GET image
+        storage --> api: Image data
+    end
+    
+    api --> issueDetails: 200 OK (issue with images)
+    deactivate api
+    
+    ' Engineer may add resolution photos
+    engineer -> issueDetails: Adds resolution photos
+    issueDetails -> api: POST /issues/{id}/resolution
+    activate api
+    
+    ' Upload resolution photos
+    loop For each resolution image
+        api -> storage: Upload resolution image
+        activate storage
+        storage -> storage: Generate unique filename
+        storage -> storage: Store image file
+        storage --> api: Return image URL/path
+        deactivate storage
+    end
+    
+    api -> db: UPDATE issues
+    note right: Add resolution image URLs
+    db --> api: Update Success
+    api --> issueDetails: 200 OK
+    deactivate api
+    
+    engineer -> issueDetails: Marks as Resolved
+    issueDetails -> api: PUT /issues/{id}
+    activate api
+    note right: {"status": "RESOLVED"}
+    api -> db: UPDATE issues 
+    note right: SET status='RESOLVED', updated_at=NOW() WHERE id=?
+    db --> api: Update Success
+    api --> issueDetails: 200 OK
+    deactivate api
+    issueDetails --> engineer: Success Message
+    note right: Issue Status: RESOLVED
+    
+    staff -> dashboard: Views Analytics
+    dashboard -> api: GET /analytics/engineers
+    activate api
+    api -> db: Query engineer performance
+    db --> api: Performance Data
+    api --> dashboard: 200 OK (performance data)
+    deactivate api
+end
+
+@enduml

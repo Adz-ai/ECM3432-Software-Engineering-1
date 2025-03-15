@@ -1,0 +1,66 @@
+@startuml "Backend Component Architecture"
+!theme plain
+skinparam componentStyle rectangle
+skinparam linetype ortho
+
+title "Backend Component Architecture - Community Issue Reporting System"
+
+package "API Layer" as api {
+  [routes.go] as routes
+  [handlers.go] as handlers
+  note right of handlers
+    Implements endpoints for:
+    - Issues CRUD
+    - Authentication
+    - Engineers
+    - Analytics
+  end note
+}
+
+package "Middleware" as middleware {
+  [JWT Authentication] as auth
+  [Logging] as logging
+  [CORS] as cors
+}
+
+package "Database" as db {
+  [DatabaseOperations] as dbOps
+  [PostgreSQL] as postgres
+  [Migrations] as migrations
+}
+
+package "Domain Models" as models {
+  [Issue] as issue
+  [User] as user
+  [Engineer] as engineer
+}
+
+package "Services" as services {
+  [Storage] as storage
+  [Password Utils] as pwdUtils
+  [Error Handling] as errorUtils
+}
+
+package "Configuration" as config {
+  [Environment Config] as env
+}
+
+' Main relationships
+api -[#blue]-> middleware : uses
+api -[#blue]-> models : uses
+api -[#blue]-> db : uses
+api -[#blue]-> services : uses
+
+' Database relationships
+db -[#green]-> models : manages
+db -[#green]-> migrations : executes
+
+' Services relationships
+services -[#red]-> models : supports
+
+' Config used by all
+config -[#gray]-> api : configures
+config -[#gray]-> db : configures
+config -[#gray]-> services : configures
+
+@enduml

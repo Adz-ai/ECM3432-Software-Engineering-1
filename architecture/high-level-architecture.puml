@@ -1,0 +1,89 @@
+@startuml "High-Level Architecture"
+!theme plain
+skinparam componentStyle rectangle
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam padding 8
+
+title "High-Level Architecture - Community Issue Reporting System"
+
+package "Users" {
+  actor "Citizen" as citizen
+  actor "Council Staff" as council_staff 
+  actor "Engineer" as engineer
+}
+
+package "Frontend Layer" #LightBlue {
+  [Web Application] as web_app
+  note bottom of web_app
+    React, Material UI
+    - Issue Reporting Forms
+    - Dashboard Views
+    - Analytics Charts
+  end note
+}
+
+package "Backend Layer" #LightGreen {
+  [API Backend] as api
+  note right of api
+    Go, Gin Framework
+    - REST API Endpoints
+    - Business Logic
+  end note
+  
+  [Authentication Service] as auth_service
+  note right of auth_service
+    JWT Authentication
+    - User Management
+    - Access Control
+  end note
+  
+  [Analytics Service] as analytics
+  note right of analytics
+    - Performance Metrics
+    - Issue Statistics
+  end note
+}
+
+package "Data Layer" #LightYellow {
+  database "PostgreSQL" as db
+  note right of db
+    - Issues
+    - Users
+    - Engineers
+    - Performance Data
+  end note
+  
+  database "Object Storage" as storage
+  note right of storage
+    S3-compatible
+    - Issue Images
+    - Attachments
+  end note
+}
+
+' User Relationships
+citizen -down-> web_app : "Reports issues"
+council_staff -down-> web_app : "Manages issues"
+engineer -down-> web_app : "Resolves issues"
+
+' Frontend-Backend Relationships
+web_app -down-> api : "API calls (JSON/HTTPS)"
+web_app -down-> auth_service : "Authentication (JWT)"
+web_app -down-> analytics : "Retrieves metrics"
+
+' Backend-Data Relationships
+api -down-> db : "CRUD operations"
+api -down-> storage : "Stores images"
+auth_service -down-> db : "Verifies credentials"
+analytics -down-> db : "Queries for statistics"
+
+legend right
+  |= Component Type |= Description |
+  |<back:#LightBlue>   | Frontend Component |
+  |<back:#LightGreen>  | Backend Service |
+  |<back:#LightYellow> | Data Storage |
+endlegend
+
+@enduml

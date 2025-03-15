@@ -1,0 +1,102 @@
+@startuml "Frontend Component Architecture"
+!theme plain
+skinparam componentStyle rectangle
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam padding 8
+
+title "Frontend Component Architecture - Community Issue Reporting System"
+
+' Main architectural layers
+package "Presentation Layer" as presentation {
+  package "Pages" as pages {
+    [HomePage]
+    [DashboardPage]
+    [IssueDetailPage]
+    [ReportIssuePage]
+    [LoginPage]
+    [RegisterPage]
+  }
+  
+  package "Components" as components {
+    package "Common UI" {
+      [Header]
+      [Footer]
+      [Navbar]
+      [Loader]
+      [ProtectedRoute]
+    }
+    
+    package "Issue Components" {
+      [IssueList]
+      [IssueDetail]
+      [IssueForm]
+      [IssueMap]
+      [IssueMarker]
+      [IssueStatusBadge]
+    }
+    
+    package "Dashboard Components" {
+      [Charts] as charts
+      note right of charts
+        • Issue Type Chart
+        • Issue Status Chart
+        • Timeline Chart
+        • Resolution Time Chart
+      end note
+      [StaffPerformance]
+    }
+  }
+}
+
+package "Application Layer" as application {
+  package "Contexts" as contexts {
+    [AuthContext]
+    [NotificationContext]
+  }
+  
+  package "Hooks" as hooks {
+    [useAuth]
+    [useIssues]
+    [useAnalytics]
+  }
+  
+  package "Utils" as utils {
+    [Helpers]
+    [Validators]
+  }
+}
+
+package "Data Access Layer" as data {
+  package "Services" as services {
+    [AuthService]
+    [IssueService]
+    [AnalyticsService]
+    [ApiClient]
+  }
+}
+
+' Core structural relationships
+presentation -[#blue]-> application : uses
+application -[#green]-> data : uses
+
+' Specific important relationships
+[DashboardPage] -[#red]-> [Charts] : renders
+[DashboardPage] -[#red]-> [StaffPerformance] : renders
+[IssueDetailPage] -[#red]-> [IssueDetail] : renders
+[HomePage] -[#red]-> [IssueMap] : renders
+[ReportIssuePage] -[#red]-> [IssueForm] : renders
+
+[IssueMap] -[#red]-> [IssueMarker] : contains
+
+[useAuth] -[#green]-> [AuthContext] : consumes
+[useAuth] -[#green]-> [AuthService] : calls
+[useIssues] -[#green]-> [IssueService] : calls
+[useAnalytics] -[#green]-> [AnalyticsService] : calls
+
+[AuthService] -[#black]-> [ApiClient] : uses
+[IssueService] -[#black]-> [ApiClient] : uses
+[AnalyticsService] -[#black]-> [ApiClient] : uses
+
+@enduml

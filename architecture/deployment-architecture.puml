@@ -1,0 +1,38 @@
+@startuml "Deployment Architecture"
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+
+title "Deployment Architecture - Community Issue Reporting System"
+
+Deployment_Node(client, "Client Device", "Computer, Tablet, or Smartphone") {
+    Container(browser, "Web Browser", "HTML, CSS, JavaScript", "Provides user interface for citizens and staff")
+}
+
+Deployment_Node(internet, "Internet") {
+    Deployment_Node(cloud, "Cloud Provider", "AWS, GCP, or Azure") {
+        Deployment_Node(webServer, "Web Server Tier", "Docker containers") {
+            Container(reactApp, "React Application", "Node.js, Nginx", "Serves static frontend assets")
+        }
+        
+        Deployment_Node(apiServer, "API Server Tier", "Docker containers") {
+            Container(goBackend, "Go API Backend", "Go, Gin", "Handles API requests and business logic")
+        }
+        
+        Deployment_Node(dataLayer, "Data Tier", "Managed services") {
+            ContainerDb(db, "Relational Database", "PostgreSQL", "Stores application data")
+            Container(objectStorage, "Object Storage", "S3, GCS or Azure Blob", "Stores issue images")
+        }
+        
+        Deployment_Node(serverless, "Serverless Tier", "FaaS") {
+            Container(analytics, "Analytics Functions", "Go Functions", "Processes analytics data asynchronously")
+        }
+    }
+}
+
+Rel(browser, reactApp, "HTTPS")
+Rel(reactApp, goBackend, "HTTPS/REST API")
+Rel(goBackend, db, "SQL/TCP")
+Rel(goBackend, objectStorage, "HTTPS")
+Rel(goBackend, analytics, "Async Event Triggers")
+Rel(analytics, db, "SQL/TCP")
+
+@enduml

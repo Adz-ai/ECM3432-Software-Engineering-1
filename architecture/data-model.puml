@@ -1,0 +1,50 @@
+@startuml "Data Model"
+!theme plain
+
+title "Data Model - Community Issue Reporting System"
+
+entity "Users" as users {
+  * id : SERIAL <<PK>>
+  --
+  * username : VARCHAR
+  * password_hash : VARCHAR
+  * user_type : VARCHAR
+  * created_at : TIMESTAMP
+}
+
+entity "Issues" as issues {
+  * id : SERIAL <<PK>>
+  --
+  * type : ENUM [POTHOLE, STREET_LIGHT, GRAFFITI, ANTI_SOCIAL, FLY_TIPPING, BLOCKED_DRAIN]
+  * status : ENUM [NEW, IN_PROGRESS, RESOLVED]
+  * description : TEXT
+  * latitude : FLOAT
+  * longitude : FLOAT
+  * images : TEXT[] // Array of image URLs
+  * reported_by : VARCHAR // Username
+  o assigned_to : INTEGER <<FK>>
+  * created_at : TIMESTAMP
+  * updated_at : TIMESTAMP
+}
+
+entity "Engineers" as engineers {
+  * id : SERIAL <<PK>>
+  --
+  * name : VARCHAR
+  * email : VARCHAR
+  * phone : VARCHAR
+  * specialization : VARCHAR
+  * join_date : DATE
+  * created_at : TIMESTAMP
+  * updated_at : TIMESTAMP
+}
+
+note bottom of issues
+  Images are stored as an array of URLs
+  directly in the Issues table, not as a separate table
+end note
+
+users ||--o{ issues : "reports"
+issues }o--|| engineers : "assigned to"
+
+@enduml
