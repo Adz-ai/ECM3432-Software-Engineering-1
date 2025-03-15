@@ -21,69 +21,97 @@ This project consists of two main components:
 
 ```
 chalkstone-council-system/
-├── frontend/                 # React frontend application
-├── backend/                  # Go (Golang) API server
-├── docker-compose.yml        # Docker Compose configuration
-├── README.md                 # Project documentation
-└── DOCKER_DEPLOYMENT.md     # Docker deployment instructions
+├── frontend/                  # React frontend application
+│   ├── src/                 # Source code
+│   │   ├── components/      # Reusable UI components
+│   │   ├── contexts/        # React context providers
+│   │   ├── hooks/           # Custom React hooks
+│   │   ├── pages/           # Page components
+│   │   ├── services/        # API service integrations
+│   │   ├── styles/          # CSS and styling files
+│   │   └── utils/           # Utility functions and helpers
+│   ├── public/              # Static assets
+│   ├── package.json         # Frontend dependencies
+│   └── Dockerfile           # Frontend container configuration
+├── backend/                   # Go (Golang) API server
+│   ├── cmd/                # Application entry points
+│   │   └── api/            # Main API application
+│   ├── internal/            # Internal packages
+│   │   ├── api/            # API handlers and routes
+│   │   ├── config/         # Configuration management
+│   │   ├── database/       # Database operations
+│   │   ├── middleware/     # HTTP middleware
+│   │   ├── models/         # Data models
+│   │   ├── storage/        # File storage operations
+│   │   └── utils/          # Utility functions
+│   ├── migrations/          # SQL database migrations
+│   ├── go.mod               # Go module dependencies
+│   └── Dockerfile           # Backend container configuration
+├── architecture/             # Architecture diagrams and documentation
+├── sample-images/            # Sample images for testing
+├── docker-compose.yml         # Docker Compose configuration
+├── .env.template              # Environment variable template
+├── README.md                  # Project documentation
+├── TESTING_STRATEGY.md        # Testing methodology documentation
+└── DOCKER_DEPLOYMENT.md      # Docker deployment instructions
 ```
 
 ## 💻 Technologies Used
 
 ### Frontend
 #### Core Technologies
-- **React**: UI library for building the user interface (v18+)
-- **React Router**: For client-side routing and navigation
-- **React Context API**: For state management across components
+- **React** (Open Source): UI library for building the user interface (v18+)
+- **React Router** (Open Source): For client-side routing and navigation
+- **React Context API** (Open Source): For state management across components
 
 #### UI Framework & Components
-- **Material UI (MUI)**: Comprehensive UI component library and design system
+- **Material UI (MUI)** (Open Source): Comprehensive UI component library and design system
   - MUI Grid System: For responsive layouts
   - MUI Cards, Dialogs, Forms: For consistent UI elements
   - MUI Icons: For iconography throughout the application
   - MUI Theming: For customized styling with light/dark modes
   - MUI Data Grid: For tabular data presentation
-- **Framer Motion**: For smooth animations and transitions
+- **Framer Motion** (Open Source): For smooth animations and transitions
 
 #### Data Visualization
-- **Recharts**: Library for creating responsive charts and graphs in the dashboard
-- **Leaflet**: Interactive maps for issue visualization with marker clustering
+- **Recharts** (Open Source): Library for creating responsive charts and graphs in the dashboard
+- **Leaflet** (Open Source): Interactive maps for issue visualization with marker clustering
 
 #### Forms & Validation
-- **Formik**: For form handling and validation
-- **Yup**: Schema-based form validation library
+- **Formik** (Open Source): For form handling and validation
+- **Yup** (Open Source): Schema-based form validation library
 - **Custom Validators**: Specialized input validation functions with test coverage
 
 #### Networking
-- **Axios**: Promise-based HTTP client for API requests
+- **Axios** (Open Source): Promise-based HTTP client for API requests
 
 #### Development Tools
-- **ESLint**: For code linting and ensuring code quality
-- **npm**: Package management
+- **ESLint** (Open Source): For code linting and ensuring code quality
+- **npm** (Open Source): Package management
 
 ### Backend
 #### Core Technologies
-- **Go (Golang)**: Backend API language
-- **Gin**: HTTP web framework for building the RESTful API
+- **Go (Golang)** (Open Source): Backend API language
+- **Gin** (Open Source): HTTP web framework for building the RESTful API
 
 #### Database & Storage
-- **PostgreSQL**: Relational database for persistent data storage
-- **MinIO**: Object storage service for image uploads and retrieval
-- **SQL Migrations**: For database schema versioning
+- **PostgreSQL** (Open Source): Relational database for persistent data storage
+- **MinIO** (Open Source): Object storage service for image uploads and retrieval
+- **SQL Migrations** (Open Source): For database schema versioning
 
 #### Security
-- **JWT**: JSON Web Tokens for authentication & authorization with role-based access control
-- **Bcrypt**: Secure password hashing
-- **CORS**: Cross-Origin Resource Sharing configuration
+- **JWT** (Open Source): JSON Web Tokens for authentication & authorization with role-based access control
+- **Bcrypt** (Open Source): Secure password hashing
+- **CORS** (Open Source): Cross-Origin Resource Sharing configuration
 - **Role-Based Access**: Staff/Admin and Regular User permission levels
 
 #### API Development
-- **Swagger**: API documentation and OpenAPI specification
-- **Go Validator**: Request validation
+- **Swagger** (Open Source): API documentation and OpenAPI specification
+- **Go Validator** (Open Source): Request validation
 
 #### Testing
-- **Go Testing**: Standard Go testing framework
-- **TestContainers**: Database testing with containerization
+- **Go Testing** (Open Source): Standard Go testing framework
+- **TestContainers** (Open Source): Database testing with containerization
 
 ## 🔧 Setup Instructions
 
