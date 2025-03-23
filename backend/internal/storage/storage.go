@@ -37,11 +37,13 @@ func UploadImage(file multipart.File, fileName string) (string, error) {
 		return "", err
 	}
 
-	// Adding this due to Docker Container Issue
-	if strings.Contains(endpoint, "minio") {
-		endpoint = "localhost:9000"
+	// Create a local copy of endpoint for URL formation
+	urlEndpoint := endpoint
+	// For Docker: If internal endpoint contains "minio", use localhost for the URL
+	if strings.Contains(urlEndpoint, "minio") {
+		urlEndpoint = "localhost:9000"
 	}
 
-	imageURL := fmt.Sprintf("http://%s/%s/%s", endpoint, bucketName, fileName)
+	imageURL := fmt.Sprintf("http://%s/%s/%s", urlEndpoint, bucketName, fileName)
 	return imageURL, nil
 }
