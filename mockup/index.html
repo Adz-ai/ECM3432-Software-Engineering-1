@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chalkstone Council Issue Reporting - UI Mockup</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+</head>
+<body>
+    <!-- Header/Navigation -->
+    <header class="header">
+        <div class="container header-container">
+            <div class="logo">
+                <span class="logo-text">Chalkstone</span>
+            </div>
+            <nav class="navigation">
+                <ul class="nav-links">
+                    <li><a href="#" class="active">Home</a></li>
+                    <li><a href="#">Map</a></li>
+                    <li><a href="#">Report Issue</a></li>
+                    <li><a href="#">Dashboard</a></li>
+                    <li><a href="#">About</a></li>
+                </ul>
+            </nav>
+            <div class="auth-buttons">
+                <button class="btn btn-login">Login</button>
+                <button class="btn btn-register">Register</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-bg-element hero-bg-1"></div>
+        <div class="hero-bg-element hero-bg-2"></div>
+        
+        <div class="container hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title">Chalkstone Council Issue Reporting</h1>
+                <p class="hero-subtitle">Help improve your community by reporting issues such as potholes,
+                    street lighting problems, graffiti, and more.</p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary">Report an Issue <span class="material-icons">arrow_forward</span></button>
+                    <button class="btn btn-outline">Learn More</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Map Section -->
+    <section class="map-section">
+        <div class="container">
+            <h2 class="section-title">Current Issues in the Area</h2>
+            <p class="section-subtitle">Explore the map to see reported issues in Chalkstone. Click on markers for more details.</p>
+            
+            <div class="map-container">
+                <div class="mockup-map">
+                    <!-- Mockup Map with Issue Markers -->
+                    <div class="map-marker" style="top: 30%; left: 40%;" data-type="pothole"></div>
+                    <div class="map-marker" style="top: 50%; left: 60%;" data-type="lighting"></div>
+                    <div class="map-marker" style="top: 70%; left: 30%;" data-type="graffiti"></div>
+                    <div class="map-marker" style="top: 40%; left: 70%;" data-type="drain"></div>
+                    <div class="map-marker" style="top: 60%; left: 25%;" data-type="anti-social"></div>
+                    <div class="map-marker" style="top: 35%; left: 55%;" data-type="fly-tipping"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Issue Types Section -->
+    <section class="issue-types-section">
+        <div class="bg-accent issue-types-bg"></div>
+        <div class="container">
+            <h2 class="section-title">Types of Issues You Can Report</h2>
+            <p class="section-subtitle">We handle a variety of community issues to keep Chalkstone safe and beautiful</p>
+            
+            <div class="issue-grid">
+                <div class="issue-card">
+                    <span class="material-icons">build</span>
+                    <h3>Potholes</h3>
+                    <p>Report road damage and potholes that need repair.</p>
+                </div>
+                <div class="issue-card">
+                    <span class="material-icons">wb_incandescent</span>
+                    <h3>Street Lighting</h3>
+                    <p>Report broken or malfunctioning street lights.</p>
+                </div>
+                <div class="issue-card">
+                    <span class="material-icons">brush</span>
+                    <h3>Graffiti</h3>
+                    <p>Report unwanted graffiti on public property.</p>
+                </div>
+                <div class="issue-card">
+                    <span class="material-icons">volume_up</span>
+                    <h3>Anti-Social Behavior</h3>
+                    <p>Report instances of anti-social behavior in your area.</p>
+                </div>
+                <div class="issue-card">
+                    <span class="material-icons">delete</span>
+                    <h3>Fly-Tipping</h3>
+                    <p>Report illegal dumping of waste or rubbish.</p>
+                </div>
+                <div class="issue-card">
+                    <span class="material-icons">water_drop</span>
+                    <h3>Blocked Drains</h3>
+                    <p>Report blocked drains causing flooding or water issues.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Info Cards Section -->
+    <section class="info-section">
+        <div class="container">
+            <div class="info-cards">
+                <div class="info-card">
+                    <span class="material-icons card-icon">report_problem</span>
+                    <h3>Report Issues</h3>
+                    <p>Spotted something that needs fixing? Report it to us and we'll make sure it gets taken care of.</p>
+                    <a href="#" class="card-link">Report Now <span class="material-icons">arrow_forward</span></a>
+                </div>
+                <div class="info-card">
+                    <span class="material-icons card-icon">track_changes</span>
+                    <h3>Track Progress</h3>
+                    <p>Follow the status of your reported issues and see when they're resolved.</p>
+                    <a href="#" class="card-link">How It Works <span class="material-icons">arrow_forward</span></a>
+                </div>
+                <div class="info-card">
+                    <span class="material-icons card-icon">public</span>
+                    <h3>Community Impact</h3>
+                    <p>Together we can make Chalkstone a better place to live, work, and visit.</p>
+                    <a href="#" class="card-link">Learn More <span class="material-icons">arrow_forward</span></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-wrapper">
+                <div class="stat-item">
+                    <h3 class="stat-value">850+</h3>
+                    <p class="stat-label">Issues Reported</p>
+                </div>
+                <div class="stat-item">
+                    <h3 class="stat-value">720+</h3>
+                    <p class="stat-label">Issues Resolved</p>
+                </div>
+                <div class="stat-item">
+                    <h3 class="stat-value">26</h3>
+                    <p class="stat-label">Days Avg. Resolution Time</p>
+                </div>
+                <div class="stat-item">
+                    <h3 class="stat-value">500+</h3>
+                    <p class="stat-label">Active Users</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3 class="footer-title">Chalkstone Council</h3>
+                    <p>Helping to make our community a better place to live and work.</p>
+                </div>
+                <div class="footer-section">
+                    <h3 class="footer-title">Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="#">Home</a></li>
+                        <li><a href="#">Report Issue</a></li>
+                        <li><a href="#">My Reports</a></li>
+                        <li><a href="#">About</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3 class="footer-title">Contact</h3>
+                    <ul class="footer-links">
+                        <li>123 Council Avenue</li>
+                        <li>Chalkstone, UK</li>
+                        <li>contact@chalkstone.gov.uk</li>
+                        <li>01234 567890</li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3 class="footer-title">Follow Us</h3>
+                    <div class="social-links">
+                        <a href="#" class="social-link">FB</a>
+                        <a href="#" class="social-link">TW</a>
+                        <a href="#" class="social-link">IG</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Chalkstone Council. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Simple script to handle map marker hover effect
+        document.querySelectorAll('.map-marker').forEach(marker => {
+            marker.addEventListener('mouseover', () => {
+                marker.classList.add('active');
+            });
+            marker.addEventListener('mouseout', () => {
+                marker.classList.remove('active');
+            });
+        });
+    </script>
+</body>
+</html>

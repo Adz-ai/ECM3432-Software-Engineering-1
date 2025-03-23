@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chalkstone Council Staff Dashboard - UI Mockup</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Header/Navigation -->
+    <header class="header">
+        <div class="container header-container">
+            <div class="logo">
+                <span class="logo-text">Chalkstone</span>
+            </div>
+            <nav class="navigation">
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="#">Map</a></li>
+                    <li><a href="#">Report Issue</a></li>
+                    <li><a href="#" class="active">Dashboard</a></li>
+                    <li><a href="#">About</a></li>
+                </ul>
+            </nav>
+            <div class="auth-buttons">
+                <span class="user-greeting">Hello, Admin</span>
+                <button class="btn btn-logout">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-content">
+        <div class="container">
+            <!-- Dashboard Header -->
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">Staff Dashboard</h1>
+                <div class="dashboard-divider"></div>
+            </div>
+
+            <!-- Date Range Selector -->
+            <div class="date-range-card">
+                <div class="date-range-container">
+                    <div class="date-range-title">
+                        <h2>Filter Data by Date Range</h2>
+                    </div>
+                    <div class="date-range-inputs">
+                        <div class="date-input-container">
+                            <label for="startDate">Start Date</label>
+                            <input type="date" id="startDate" name="startDate" value="2025-02-23">
+                        </div>
+                        <div class="date-input-container">
+                            <label for="endDate">End Date</label>
+                            <input type="date" id="endDate" name="endDate" value="2025-03-23">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="summary-cards">
+                <div class="summary-card total-issues">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <span class="material-icons">trending_up</span>
+                        </div>
+                        <h3>Total Issues</h3>
+                    </div>
+                    <p class="card-value">850</p>
+                </div>
+                
+                <div class="summary-card resolved-issues">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <span class="material-icons">check_circle</span>
+                        </div>
+                        <h3>Resolved Issues</h3>
+                    </div>
+                    <p class="card-value">720</p>
+                </div>
+                
+                <div class="summary-card pending-issues">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <span class="material-icons">pending</span>
+                        </div>
+                        <h3>Pending Issues</h3>
+                    </div>
+                    <p class="card-value">130</p>
+                </div>
+                
+                <div class="summary-card resolution-time">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <span class="material-icons">schedule</span>
+                        </div>
+                        <h3>Avg. Resolution Time</h3>
+                    </div>
+                    <p class="card-value">26 days</p>
+                </div>
+            </div>
+
+            <!-- Charts Row 1 -->
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h3>Issues by Type</h3>
+                    <div class="chart-container">
+                        <canvas id="issueTypeChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <h3>Issues by Status</h3>
+                    <div class="chart-container">
+                        <canvas id="issueStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row 2 -->
+            <div class="charts-container">
+                <div class="chart-card full-width">
+                    <h3>Issues Timeline</h3>
+                    <div class="chart-container">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Staff Performance -->
+            <div class="performance-section">
+                <h2 class="section-title">Staff Performance</h2>
+                <div class="performance-cards">
+                    <div class="performance-card">
+                        <div class="staff-details">
+                            <div class="staff-avatar">JD</div>
+                            <div class="staff-info">
+                                <h3>John Doe</h3>
+                                <p>Senior Engineer</p>
+                            </div>
+                        </div>
+                        <div class="performance-stats">
+                            <div class="stat">
+                                <p class="stat-value">58</p>
+                                <p class="stat-label">Assigned</p>
+                            </div>
+                            <div class="stat">
+                                <p class="stat-value">52</p>
+                                <p class="stat-label">Resolved</p>
+                            </div>
+                            <div class="stat">
+                                <p class="stat-value">89%</p>
+                                <p class="stat-label">Efficiency</p>
+                            </div>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: 89%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="performance-card">
+                        <div class="staff-details">
+                            <div class="staff-avatar">JS</div>
+                            <div class="staff-info">
+                                <h3>Jane Smith</h3>
+                                <p>Field Engineer</p>
+                            </div>
+                        </div>
+                        <div class="performance-stats">
+                            <div class="stat">
+                                <p class="stat-value">45</p>
+                                <p class="stat-label">Assigned</p>
+                            </div>
+                            <div class="stat">
+                                <p class="stat-value">42</p>
+                                <p class="stat-label">Resolved</p>
+                            </div>
+                            <div class="stat">
+                                <p class="stat-value">93%</p>
+                                <p class="stat-label">Efficiency</p>
+                            </div>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: 93%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="performance-card">
+                        <div class="staff-details">
+                            <div class="staff-avatar">RJ</div>
+                            <div class="staff-info">
+                                <h3>Robert Johnson</h3>
+                                <p>Field Engineer</p>
+                            </div>
+                        </div>
+                        <div class="performance-stats">
+                            <div class="stat">
+                                <p class="stat-value">38</p>
+                                <p class="stat-label">Assigned</p>
+                            </div>
+                            <div class="stat">
+                                <p class="stat-value">33</p>
+                                <p class="stat-label">Resolved</p>
+                            </div>
+                            <div class="stat">
+                                <p class="stat-value">87%</p>
+                                <p class="stat-label">Efficiency</p>
+                            </div>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: 87%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Issues Table -->
+            <div class="issues-section">
+                <div class="issues-header">
+                    <h2 class="section-title">Recent Issues</h2>
+                    <button class="btn btn-primary">View All Issues</button>
+                </div>
+                <div class="issues-table-container">
+                    <table class="issues-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Location</th>
+                                <th>Reported</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#1342</td>
+                                <td>Pothole on Main Street</td>
+                                <td>
+                                    <span class="issue-type-badge pothole">Pothole</span>
+                                </td>
+                                <td>Main St & Oak Ave</td>
+                                <td>23 Mar 2025</td>
+                                <td>
+                                    <span class="status-badge new">New</span>
+                                </td>
+                                <td>
+                                    <button class="action-btn">
+                                        <span class="material-icons">visibility</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>#1341</td>
+                                <td>Broken Street Light</td>
+                                <td>
+                                    <span class="issue-type-badge lighting">Street Lighting</span>
+                                </td>
+                                <td>Park Lane</td>
+                                <td>22 Mar 2025</td>
+                                <td>
+                                    <span class="status-badge new">New</span>
+                                </td>
+                                <td>
+                                    <button class="action-btn">
+                                        <span class="material-icons">visibility</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>#1339</td>
+                                <td>Graffiti on Public Building</td>
+                                <td>
+                                    <span class="issue-type-badge graffiti">Graffiti</span>
+                                </td>
+                                <td>Community Center</td>
+                                <td>21 Mar 2025</td>
+                                <td>
+                                    <span class="status-badge assigned">Assigned</span>
+                                </td>
+                                <td>
+                                    <button class="action-btn">
+                                        <span class="material-icons">visibility</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>#1337</td>
+                                <td>Blocked Drain Causing Flooding</td>
+                                <td>
+                                    <span class="issue-type-badge drain">Blocked Drain</span>
+                                </td>
+                                <td>Elm Street</td>
+                                <td>20 Mar 2025</td>
+                                <td>
+                                    <span class="status-badge in-progress">In Progress</span>
+                                </td>
+                                <td>
+                                    <button class="action-btn">
+                                        <span class="material-icons">visibility</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>#1335</td>
+                                <td>Illegal Dumping in Park</td>
+                                <td>
+                                    <span class="issue-type-badge fly-tipping">Fly-Tipping</span>
+                                </td>
+                                <td>Central Park</td>
+                                <td>19 Mar 2025</td>
+                                <td>
+                                    <span class="status-badge resolved">Resolved</span>
+                                </td>
+                                <td>
+                                    <button class="action-btn">
+                                        <span class="material-icons">visibility</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3 class="footer-title">Chalkstone Council</h3>
+                    <p>Helping to make our community a better place to live and work.</p>
+                </div>
+                <div class="footer-section">
+                    <h3 class="footer-title">Staff Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="#">Dashboard</a></li>
+                        <li><a href="#">Manage Issues</a></li>
+                        <li><a href="#">Assignment Reports</a></li>
+                        <li><a href="#">Staff Directory</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3 class="footer-title">Contact</h3>
+                    <ul class="footer-links">
+                        <li>123 Council Avenue</li>
+                        <li>Chalkstone, UK</li>
+                        <li>contact@chalkstone.gov.uk</li>
+                        <li>01234 567890</li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3 class="footer-title">Follow Us</h3>
+                    <div class="social-links">
+                        <a href="#" class="social-link">FB</a>
+                        <a href="#" class="social-link">TW</a>
+                        <a href="#" class="social-link">IG</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Chalkstone Council. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mock data for charts
+        window.addEventListener('DOMContentLoaded', () => {
+            // Issue Type Chart
+            const issueTypeCtx = document.getElementById('issueTypeChart').getContext('2d');
+            const issueTypeChart = new Chart(issueTypeCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Potholes', 'Street Lighting', 'Graffiti', 'Anti-Social Behavior', 'Fly-Tipping', 'Blocked Drains'],
+                    datasets: [{
+                        data: [235, 165, 120, 95, 130, 105],
+                        backgroundColor: [
+                            '#ef4444', // Pothole
+                            '#f59e0b', // Lighting
+                            '#3b82f6', // Graffiti
+                            '#9c27b0', // Anti-social
+                            '#d32f2f', // Fly-tipping
+                            '#1976d2'  // Drain
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+
+            // Issue Status Chart
+            const issueStatusCtx = document.getElementById('issueStatusChart').getContext('2d');
+            const issueStatusChart = new Chart(issueStatusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['New', 'Assigned', 'In Progress', 'Resolved'],
+                    datasets: [{
+                        data: [110, 135, 75, 530],
+                        backgroundColor: [
+                            '#3b82f6', // New
+                            '#f59e0b', // Assigned
+                            '#9c27b0', // In Progress
+                            '#10b981'  // Resolved
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+
+            // Timeline Chart
+            const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+            const timelineChart = new Chart(timelineCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'],
+                    datasets: [
+                        {
+                            label: 'Reported Issues',
+                            data: [85, 95, 110, 140, 120, 150],
+                            borderColor: '#1976d2',
+                            backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Resolved Issues',
+                            data: [70, 85, 100, 120, 110, 130],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

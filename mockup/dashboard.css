@@ -1,0 +1,502 @@
+/* Dashboard Specific Styles */
+.dashboard-content {
+    padding: 2rem 0 4rem;
+}
+
+.dashboard-header {
+    margin-bottom: 2rem;
+}
+
+.dashboard-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--primary-dark);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.dashboard-divider {
+    width: 100px;
+    height: 4px;
+    background-color: var(--primary);
+    margin: 0.75rem 0 1.5rem;
+    border-radius: 2px;
+}
+
+.date-range-card {
+    background-color: var(--white);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-md);
+}
+
+.date-range-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.date-range-title {
+    flex: 1;
+    min-width: 200px;
+    margin-bottom: 1rem;
+}
+
+.date-range-title h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.date-range-inputs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    flex: 2;
+}
+
+.date-input-container {
+    flex: 1;
+    min-width: 200px;
+}
+
+.date-input-container label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.date-input-container input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    font-family: inherit;
+    background-color: var(--white);
+    transition: all 0.3s ease;
+}
+
+.date-input-container input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+    outline: none;
+}
+
+/* Summary Cards */
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.summary-card {
+    background-color: var(--white);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-top: 4px solid var(--primary);
+}
+
+.summary-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.summary-card.total-issues {
+    border-top-color: var(--primary);
+}
+
+.summary-card.resolved-issues {
+    border-top-color: var(--success);
+}
+
+.summary-card.pending-issues {
+    border-top-color: var(--warning);
+}
+
+.summary-card.resolution-time {
+    border-top-color: var(--info);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.card-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    margin-right: 1rem;
+    background-color: rgba(25, 118, 210, 0.1);
+}
+
+.total-issues .card-icon {
+    background-color: rgba(25, 118, 210, 0.1);
+    color: var(--primary);
+}
+
+.resolved-issues .card-icon {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+}
+
+.pending-issues .card-icon {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--warning);
+}
+
+.resolution-time .card-icon {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--info);
+}
+
+.card-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.card-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+/* Charts Section */
+.charts-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.chart-card {
+    background-color: var(--white);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+}
+
+.chart-card.full-width {
+    grid-column: 1 / -1;
+}
+
+.chart-card h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+.chart-container {
+    height: 400px;
+    width: 100%;
+    position: relative;
+}
+
+/* Staff Performance Section */
+.performance-section {
+    margin-bottom: 3rem;
+}
+
+.performance-section .section-title {
+    text-align: left;
+    margin-bottom: 1.5rem;
+}
+
+.performance-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.performance-card {
+    background-color: var(--white);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.performance-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.staff-details {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.staff-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--primary);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-right: 1rem;
+}
+
+.staff-info h3 {
+    font-size: 1.25rem;
+    margin: 0 0 0.25rem;
+}
+
+.staff-info p {
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.performance-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem;
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.progress-container {
+    width: 100%;
+    height: 8px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background-color: var(--primary);
+    border-radius: 4px;
+    transition: width 1s ease;
+}
+
+/* Recent Issues Section */
+.issues-section {
+    margin-bottom: 3rem;
+}
+
+.issues-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.issues-header .section-title {
+    margin-bottom: 0;
+    text-align: left;
+}
+
+.issues-table-container {
+    background-color: var(--white);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+.issues-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.issues-table th {
+    background-color: #f9fafb;
+    color: var(--text-primary);
+    font-weight: 600;
+    text-align: left;
+    padding: 1rem;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.issues-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #eeeeee;
+    color: var(--text-primary);
+}
+
+.issues-table tr:last-child td {
+    border-bottom: none;
+}
+
+.issues-table tr:hover {
+    background-color: #f5f7fa;
+}
+
+.issue-type-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.issue-type-badge.pothole {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.issue-type-badge.lighting {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.issue-type-badge.graffiti {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.issue-type-badge.drain {
+    background-color: rgba(25, 118, 210, 0.1);
+    color: #1976d2;
+}
+
+.issue-type-badge.fly-tipping {
+    background-color: rgba(211, 47, 47, 0.1);
+    color: #d32f2f;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.new {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.status-badge.assigned {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.status-badge.in-progress {
+    background-color: rgba(156, 39, 176, 0.1);
+    color: #9c27b0;
+}
+
+.status-badge.resolved {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: background-color 0.3s ease;
+}
+
+.action-btn:hover {
+    background-color: rgba(25, 118, 210, 0.1);
+}
+
+.user-greeting {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-right: 1rem;
+}
+
+.btn-logout {
+    background-color: transparent;
+    color: var(--text-primary);
+    border: 1px solid #ddd;
+}
+
+.btn-logout:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 991px) {
+    .charts-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .date-range-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .date-range-title {
+        margin-bottom: 1rem;
+        width: 100%;
+    }
+    
+    .date-range-inputs {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .summary-cards {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    
+    .performance-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .issues-table-container {
+        overflow-x: auto;
+    }
+    
+    .card-value {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .summary-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .date-range-inputs {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
