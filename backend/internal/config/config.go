@@ -13,6 +13,7 @@ type Config struct {
 	DBName     string `mapstructure:"DB_NAME"`
 	JWTSecret  string `mapstructure:"JWT_SECRET"`
 	Port       string `mapstructure:"PORT"`
+	AllowedOrigins string `mapstructure:"ALLOWED_ORIGINS"`
 }
 
 func LoadConfig() (Config, error) {
@@ -39,6 +40,7 @@ func LoadConfig() (Config, error) {
 	fmt.Printf("DB_NAME: %s\n", config.DBName)
 	fmt.Printf("JWT_SECRET: %s\n", config.JWTSecret)
 	fmt.Printf("PORT: %s\n", config.Port)
+	fmt.Printf("ALLOWED_ORIGINS: %s\n", config.AllowedOrigins)
 
 	return config, nil
 }

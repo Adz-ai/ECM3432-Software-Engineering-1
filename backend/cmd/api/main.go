@@ -2,13 +2,15 @@
 package main
 
 import (
+	"log"
+	"strings"
+	"time"
+
 	"chalkstone.council/docs"
 	"chalkstone.council/internal/api"
 	"chalkstone.council/internal/config"
 	"chalkstone.council/internal/database"
 	"chalkstone.council/internal/middleware"
-	"log"
-	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -60,23 +62,28 @@ func main() {
 		}
 	}()
 
-	r := gin.Default()
-
-	// Swagger docs
-	docs.SwaggerInfo.BasePath = "/api"
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	r := gin.New()        // Use New instead of Default to have more control over middleware
+	r.Use(gin.Recovery()) // Add recovery middleware
 
 	// Middleware
+	// Order matters: Recovery -> Logging -> RateLimit -> CORS -> SecurityHeaders -> Auth (where applicable)
+	// Set trusted proxies if running behind a load balancer/reverse proxy
+	// r.SetTrustedProxies([]string{"192.168.1.2"}) // Example: replace with actual proxy IPs or CIDRs
 	r.Use(middleware.Logging())
-	r.Use(middleware.RateLimit(middleware.NewIPRateLimiter(10, 20))) // 10 requests per second, burst of 20
+	r.Use(middleware.RateLimit(middleware.NewIPRateLimiter(20, 30)))
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
+		AllowOrigins:     strings.Split(cfg.AllowedOrigins, ","),
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+	r.Use(middleware.SecurityHeadersMiddleware()) // Add security headers middleware
+
+	// Swagger docs
+	docs.SwaggerInfo.BasePath = "/api"
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Create an instance of RealAuth
 	auth := &middleware.RealAuth{}

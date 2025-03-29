@@ -18,6 +18,7 @@ func SetupRoutes(r *gin.Engine, db database.DatabaseOperations, auth middleware.
 
 	// Auth routes
 	authGroup := api.Group("/auth")
+	authGroup.Use(middleware.RateLimit(middleware.NewIPRateLimiter(0.08, 5))) // Stricter limit: ~5 req/min
 	{
 		authGroup.POST("/login", handler.Login)
 		authGroup.POST("/register", handler.Register)
