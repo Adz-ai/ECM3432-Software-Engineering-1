@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check for stored token on initial load
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
 
     if (token) {
       try {
@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (e) {
         console.error('Error processing token:', e);
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
       }
     }
     setIsLoading(false);
@@ -100,7 +100,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       // Store token
-      localStorage.setItem('token', token);
+      sessionStorage.setItem('token', token);
 
       // Handle the case where user object is directly provided in the response (for testing)
       if (responseData.user) {
@@ -155,7 +155,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     console.log('Logging out user:', currentUser?.username);
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
     setCurrentUser(null);
   };
 

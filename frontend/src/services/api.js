@@ -19,10 +19,11 @@ const apiFormData = axios.create({
 
 // Helper function to add auth token to requests
 const addAuthToken = (config) => {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   if (token) {
     config.headers['Authorization'] = `Bearer ${token}`;
-    console.log('Adding token to request:', config.url);
+    // Avoid logging sensitive token data, even in dev
+    // console.log('Adding token to request:', config.url);
   }
   return config;
 };
@@ -47,13 +48,18 @@ apiFormData.interceptors.request.use(
 
 // Response interceptor for handling errors (shared logic)
 const handleResponseError = (error) => {
-  console.error('API Error:', error.response || error);
+  // Log less information in production
+  if (process.env.NODE_ENV !== 'production') {
+    console.error('API Error:', error.response || error);
+  } else {
+    console.error(`API Error on ${error.config?.url}: ${error.message}`);
+  }
 
   if (error.response && error.response.status === 401) {
     // Handle unauthorized error (e.g., redirect to login)
     console.log('401 Unauthorized - clearing auth data');
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('token'); // Use sessionStorage
+    // localStorage.removeItem('user'); // No longer storing user object separately
     window.location.href = '/login';
   }
   return Promise.reject(error);
