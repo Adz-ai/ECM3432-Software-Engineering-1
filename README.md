@@ -77,11 +77,6 @@ chalkstone-council-system/
 - **Recharts** (Open Source): Library for creating responsive charts and graphs in the dashboard
 - **Leaflet** (Open Source): Interactive maps for issue visualization with marker clustering
 
-#### Forms & Validation
-- **Formik** (Open Source): For form handling and validation
-- **Yup** (Open Source): Schema-based form validation library
-- **Custom Validators**: Specialized input validation functions with test coverage
-
 #### Networking
 - **Axios** (Open Source): Promise-based HTTP client for API requests
 
