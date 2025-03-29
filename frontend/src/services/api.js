@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 
 // Create an instance for JSON requests
 const api = axios.create({
@@ -49,7 +49,7 @@ apiFormData.interceptors.request.use(
 // Response interceptor for handling errors (shared logic)
 const handleResponseError = (error) => {
   // Log less information in production
-  if (process.env.NODE_ENV !== 'production') {
+  if (import.meta.env.VITE_NODE_ENV !== 'production') {
     console.error('API Error:', error.response || error);
   } else {
     console.error(`API Error on ${error.config?.url}: ${error.message}`);

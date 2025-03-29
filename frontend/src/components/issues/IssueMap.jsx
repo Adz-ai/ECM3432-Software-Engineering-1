@@ -9,6 +9,11 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { renderToString } from 'react-dom/server';
 
+// Import marker images using ES Modules
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
+
 // Material UI imports
 import { 
   Build as PotholeIcon, 
@@ -20,12 +25,12 @@ import {
 } from '@mui/icons-material';
 import { Checkbox, FormControlLabel, Paper } from '@mui/material';
 
-// Fix for marker icons in React-Leaflet
+// Fix for marker icons in React-Leaflet using imported variables
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
-  iconUrl: require('leaflet/dist/images/marker-icon.png'),
-  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+  iconRetinaUrl: iconRetinaUrl,
+  iconUrl: iconUrl,
+  shadowUrl: shadowUrl,
 });
 
 // Create Material UI Icon Markers

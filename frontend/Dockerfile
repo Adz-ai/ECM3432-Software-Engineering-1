@@ -9,15 +9,15 @@ WORKDIR /app
 # Copy package.json and package-lock.json first (for better caching)
 COPY package*.json ./
 
-# Use npm ci for more reliable production builds
-RUN npm ci --only=production
+# Use npm ci to install all dependencies needed for the build
+RUN npm ci
 
 # Copy the configuration files needed for build
-COPY public ./public
 COPY .env.docker ./.env
 
 # Copy the source code (leveraging Docker layer caching)
 COPY src ./src
+COPY index.html ./
 
 # Build with production optimizations
 RUN npm run build
@@ -68,8 +68,8 @@ http {\
 # Remove default conf.d to avoid conflicts
 RUN rm -rf /etc/nginx/conf.d/*
 
-# Copy built assets from the builder stage
-COPY --from=builder /app/build /usr/share/nginx/html
+# Copy built assets from the builder stage (Vite default is 'dist')
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Add non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
