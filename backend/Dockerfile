@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.24.1-bookworm AS builder
+FROM golang:1.25-bookworm AS builder
 
 # Install build tools and dependencies
 RUN apt-get update && apt-get install -y make git && rm -rf /var/lib/apt/lists/*

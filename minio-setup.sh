@@ -4,7 +4,7 @@ set -e
 echo "Setting up Minio..."
 
 # Configure Minio client
-/usr/bin/mc config host add myminio http://minio:9000 minioadmin minioadmin
+/usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin
 
 # Create bucket (ignore error if it already exists)
 /usr/bin/mc mb myminio/issues-bucket || true

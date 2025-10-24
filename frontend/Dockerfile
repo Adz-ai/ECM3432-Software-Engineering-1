@@ -1,7 +1,6 @@
-# Build stage
-FROM node:20-alpine AS builder
-
-# No need for make anymore
+# Build stage - Use Debian-based image for better compatibility with native modules
+# Force AMD64 platform for consistent build across architectures
+FROM --platform=linux/amd64 node:20-slim AS builder
 
 # Set working directory
 WORKDIR /app
@@ -9,12 +8,19 @@ WORKDIR /app
 # Copy package.json and package-lock.json first (for better caching)
 COPY package*.json ./
 
-# Use npm ci for more reliable production builds
-RUN npm ci --only=production
+# Install ALL dependencies (including devDependencies needed for TypeScript and Vite build)
+# Using npm install instead of npm ci to work around npm optional dependencies bug
+# Reference: https://github.com/npm/cli/issues/4828
+RUN rm -f package-lock.json && npm install --legacy-peer-deps
 
-# Copy the configuration files needed for build
-COPY public ./public
+# Copy configuration files needed for build
+COPY tsconfig.json ./
+COPY vite.config.ts ./
+COPY index.html ./
 COPY .env.docker ./.env
+
+# Copy public directory (Vite uses it for static assets)
+COPY public ./public
 
 # Copy the source code (leveraging Docker layer caching)
 COPY src ./src
