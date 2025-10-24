@@ -40,7 +40,7 @@ describe('Validator Utilities', () => {
 
     // Test invalid emails
     test.each(invalidEmails)('rejects invalid email: %s', (email) => {
-      expect(isValidEmail(email)).toBe(false);
+      expect(isValidEmail(email as string)).toBe(false);
     });
   });
 
@@ -76,7 +76,7 @@ describe('Validator Utilities', () => {
 
     // Test invalid passwords
     test.each(invalidPasswords)('rejects invalid password: %s', (password) => {
-      expect(isValidPassword(password)).toBe(false);
+      expect(isValidPassword(password as string)).toBe(false);
     });
   });
 
@@ -107,12 +107,13 @@ describe('Validator Utilities', () => {
 
       // Test valid latitudes
       test.each(validLatitudes)('validates latitude: %s', (value, type) => {
-        expect(isValidCoordinate(value, type)).toBe(true);
+        expect(isValidCoordinate(value as number, type as 'lat' | 'lng')).toBe(true);
       });
 
       // Test invalid latitudes
-      test.each(invalidLatitudes)('rejects invalid latitude: %s', (value, type) => {
-        expect(isValidCoordinate(value, type)).toBe(false);
+      // @ts-expect-error - test.each typing issue with vitest
+      test.each(invalidLatitudes)('rejects invalid latitude: %s', (value: any, type: any) => {
+        expect(isValidCoordinate(value as number, type as 'lat' | 'lng')).toBe(false);
       });
     });
 
@@ -142,12 +143,13 @@ describe('Validator Utilities', () => {
 
       // Test valid longitudes
       test.each(validLongitudes)('validates longitude: %s', (value, type) => {
-        expect(isValidCoordinate(value, type)).toBe(true);
+        expect(isValidCoordinate(value as number, type as 'lat' | 'lng')).toBe(true);
       });
 
       // Test invalid longitudes
-      test.each(invalidLongitudes)('rejects invalid longitude: %s', (value, type) => {
-        expect(isValidCoordinate(value, type)).toBe(false);
+      // @ts-expect-error - test.each typing issue with vitest
+      test.each(invalidLongitudes)('rejects invalid longitude: %s', (value: any, type: any) => {
+        expect(isValidCoordinate(value as number, type as 'lat' | 'lng')).toBe(false);
       });
     });
 
@@ -200,10 +202,9 @@ describe('Validator Utilities', () => {
         // missing type
         description: 'A description of the issue that is detailed enough',
         // missing location
-        images: []
       };
 
-      const result = validateIssueForm(incompleteForm);
+      const result = validateIssueForm(incompleteForm as any);
       expect(result.isValid).toBe(false);
       expect(result.errors.type).toBeDefined();
       expect(result.errors.location).toBeDefined();
@@ -214,10 +215,9 @@ describe('Validator Utilities', () => {
         type: 'POTHOLE',
         description: 'Too short', // less than 10 characters
         location: { latitude: 51.5074, longitude: -0.1278 },
-        images: []
       };
 
-      const result = validateIssueForm(shortDescForm);
+      const result = validateIssueForm(shortDescForm as any);
       expect(result.isValid).toBe(false);
       expect(result.errors.description).toBeDefined();
     });
@@ -227,10 +227,9 @@ describe('Validator Utilities', () => {
         type: 'POTHOLE',
         description: 'A valid description for the issue that meets requirements',
         location: { latitude: 91, longitude: 181 }, // invalid coordinates
-        images: []
       };
 
-      const result = validateIssueForm(invalidLocationForm);
+      const result = validateIssueForm(invalidLocationForm as any);
       expect(result.isValid).toBe(false);
       expect(result.errors.location).toBeDefined();
     });
@@ -238,12 +237,12 @@ describe('Validator Utilities', () => {
     it('should handle null or undefined values gracefully', () => {
       // Test with null form
       expect(() => validateIssueForm(null)).not.toThrow();
-      
+
       // Test with undefined form
       expect(() => validateIssueForm(undefined)).not.toThrow();
-      
+
       // Test with empty object
-      const result = validateIssueForm({});
+      const result = validateIssueForm({} as any);
       expect(result.isValid).toBe(false);
       expect(result.errors).toBeDefined();
     });

@@ -23,6 +23,11 @@ describe('LoginPage', () => {
     login: mockLogin,
     error: null,
     isAuthenticated: false,
+    currentUser: null,
+    isLoading: false,
+    register: vi.fn(),
+    logout: vi.fn(),
+    isStaff: vi.fn().mockReturnValue(false),
   };
 
   beforeEach(() => {
@@ -109,7 +114,7 @@ describe('LoginPage', () => {
 
   it('shows error messages on login failure', async () => {
     // Mock a login error
-    const loginError = new Error('Invalid credentials');
+    const loginError: any = new Error('Invalid credentials');
     loginError.response = { data: { message: 'Invalid username or password' } };
     mockLogin.mockRejectedValueOnce(loginError);
 

@@ -1,11 +1,20 @@
-// src/components/dashboard/IssueStatusChart.jsx
+// src/components/dashboard/IssueStatusChart.tsx
 
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const IssueStatusChart = ({ data }) => {
+interface IssueStatusData {
+  status: string;
+  count: number;
+}
+
+interface IssueStatusChartProps {
+  data: IssueStatusData[];
+}
+
+const IssueStatusChart: React.FC<IssueStatusChartProps> = ({ data }) => {
   // Transform data if needed
-  const chartData = data.map(item => ({
+  const chartData = data.map((item: IssueStatusData) => ({
     name: item.status,
     count: item.count,
   }));

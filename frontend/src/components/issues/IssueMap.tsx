@@ -1,40 +1,46 @@
-// src/components/issues/IssueMap.jsx
+// src/components/issues/IssueMap.tsx
 
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
-import { issuesService } from '../../services/api';
+import { issuesService, Issue } from '../../services/api';
+import { IssueType } from '../../utils/constants';
 import IssueStatusBadge from './IssueStatusBadge';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { renderToString } from 'react-dom/server';
 
 // Material UI imports
-import { 
-  Build as PotholeIcon, 
+import {
+  Build as PotholeIcon,
   WbIncandescent as StreetLightIcon,
-  Brush as GraffitiIcon, 
+  Brush as GraffitiIcon,
   NoiseAware as AntiSocialIcon,
   Delete as FlyTippingIcon,
   Water as BlockedDrainIcon
 } from '@mui/icons-material';
 import { Checkbox, FormControlLabel, Paper } from '@mui/material';
+import { SvgIconComponent } from '@mui/icons-material';
 
 // Fix for marker icons in React-Leaflet
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
-  iconUrl: require('leaflet/dist/images/marker-icon.png'),
-  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
 });
 
 // Create Material UI Icon Markers
-const createMaterialIconMarker = (IconComponent, color) => {
+const createMaterialIconMarker = (IconComponent: SvgIconComponent, color: string): L.DivIcon => {
   const iconHtml = renderToString(
-    <div style={{ 
-      color, 
-      background: 'white', 
-      borderRadius: '50%', 
+    <div style={{
+      color,
+      background: 'white',
+      borderRadius: '50%',
       padding: '6px',
       boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
       display: 'flex',
@@ -46,7 +52,7 @@ const createMaterialIconMarker = (IconComponent, color) => {
       <IconComponent style={{ fontSize: '24px' }} />
     </div>
   );
-  
+
   return L.divIcon({
     html: iconHtml,
     className: 'material-icon-marker',
@@ -57,7 +63,7 @@ const createMaterialIconMarker = (IconComponent, color) => {
 };
 
 // Custom marker icons for different issue types
-const issueIcons = {
+const issueIcons: Record<IssueType, L.DivIcon> = {
   POTHOLE: createMaterialIconMarker(PotholeIcon, '#ff5722'),
   STREET_LIGHT: createMaterialIconMarker(StreetLightIcon, '#ffc107'),
   GRAFFITI: createMaterialIconMarker(GraffitiIcon, '#9c27b0'),
@@ -66,11 +72,11 @@ const issueIcons = {
   BLOCKED_DRAIN: createMaterialIconMarker(BlockedDrainIcon, '#2196f3'),
 };
 
-const IssueMap = () => {
-  const [issues, setIssues] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showResolved, setShowResolved] = useState(false);
+const IssueMap: React.FC = () => {
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showResolved, setShowResolved] = useState<boolean>(false);
   const navigate = useNavigate();
 
   // Exeter city center coordinates
@@ -78,7 +84,7 @@ const IssueMap = () => {
   const defaultZoom = 13;
 
   useEffect(() => {
-    const fetchMapIssues = async () => {
+    const fetchMapIssues = async (): Promise<void> => {
       try {
         setLoading(true);
         const response = await issuesService.getMapIssues();
@@ -86,13 +92,14 @@ const IssueMap = () => {
 
         // Ensure we have an array of issues with IDs
         if (Array.isArray(response.data)) {
-          setIssues(response.data);
+          setIssues(response.data as Issue[]);
         } else {
           console.warn('Unexpected map issues response format:', response.data);
           setIssues([]);
         }
       } catch (err) {
-        setError('Failed to load issues for the map');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load issues for the map';
+        setError(errorMessage);
         console.error('Error fetching map issues:', err);
       } finally {
         setLoading(false);
@@ -102,7 +109,7 @@ const IssueMap = () => {
     fetchMapIssues();
   }, []);
 
-  const handleViewDetails = (issueId) => {
+  const handleViewDetails = (issueId: number): void => {
     console.log('Navigating to issue details with ID:', issueId);
 
     // Only navigate if we have a valid ID
@@ -113,11 +120,11 @@ const IssueMap = () => {
     }
   };
 
-  const getMarkerIcon = (issueType) => {
+  const getMarkerIcon = (issueType: IssueType): L.Icon | L.DivIcon => {
     return issueIcons[issueType] || new L.Icon.Default();
   };
 
-  const formatIssueType = (type) => {
+  const formatIssueType = (type: IssueType): string => {
     return type ? type.replace(/_/g, ' ') : 'Unknown';
   };
 
@@ -174,13 +181,13 @@ const IssueMap = () => {
           <div className="no-issues-overlay">No issues reported in this area</div>
         )}
 
-        {issues.map((issue, index) => {
+        {issues.map((issue: Issue, index: number) => {
           // Skip markers with invalid location data
           if (!issue.location || !issue.location.latitude || !issue.location.longitude) {
             console.warn('Issue missing valid location data:', issue);
             return null;
           }
-          
+
           // Skip resolved issues unless showResolved is true
           if (issue.status === 'RESOLVED' && !showResolved) {
             return null;
@@ -189,14 +196,14 @@ const IssueMap = () => {
           // Use a different style for resolved issues (more transparent markers)
           const isResolved = issue.status === 'RESOLVED';
           const markerIcon = getMarkerIcon(issue.type);
-          
+
           // Create a modified icon for resolved issues with reduced opacity
-          let iconToUse = markerIcon;
+          const iconToUse = markerIcon;
           if (isResolved) {
             // This is a simplified approach - ideally we'd modify the icon directly
             // but for now we'll just use a visual indicator in the popup
           }
-          
+
           return (
             <Marker
               key={issue.id || `marker-${index}`}

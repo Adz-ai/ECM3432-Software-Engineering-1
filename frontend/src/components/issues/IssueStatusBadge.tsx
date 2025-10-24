@@ -1,14 +1,17 @@
-// src/components/issues/IssueStatusBadge.jsx
+// src/components/issues/IssueStatusBadge.tsx
 
 import React from 'react';
+import { IssueStatus } from '../../utils/constants';
+
+interface IssueStatusBadgeProps {
+  status: IssueStatus;
+}
 
 /**
  * Component to display the status of an issue with appropriate styling
- * @param {Object} props
- * @param {string} props.status - The issue status (NEW, IN_PROGRESS, RESOLVED)
  */
-const IssueStatusBadge = ({ status }) => {
-  const getStatusClassName = () => {
+const IssueStatusBadge: React.FC<IssueStatusBadgeProps> = ({ status }) => {
+  const getStatusClassName = (): string => {
     switch (status) {
       case 'NEW':
         return 'status-new';
@@ -21,7 +24,7 @@ const IssueStatusBadge = ({ status }) => {
     }
   };
 
-  const getDisplayText = () => {
+  const getDisplayText = (): string => {
     switch (status) {
       case 'NEW':
         return 'New';

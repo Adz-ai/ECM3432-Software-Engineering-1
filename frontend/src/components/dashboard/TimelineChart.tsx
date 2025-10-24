@@ -1,9 +1,19 @@
-// src/components/dashboard/TimelineChart.jsx
+// src/components/dashboard/TimelineChart.tsx
 
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const TimelineChart = ({ data }) => {
+interface TimelineData {
+  date: string;
+  reported: number;
+  resolved: number;
+}
+
+interface TimelineChartProps {
+  data: TimelineData[];
+}
+
+const TimelineChart: React.FC<TimelineChartProps> = ({ data }) => {
   // Assuming data is already in the right format with date and count
   return (
     <ResponsiveContainer width="100%" height={300}>

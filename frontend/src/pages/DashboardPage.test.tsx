@@ -5,7 +5,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import DashboardPage from './DashboardPage';
-import { analyticsService, issuesService } from '../services/api';
+import { analyticsService, issuesService, User } from '../services/api';
 
 // Mock the API services
 vi.mock('../services/api', () => ({
@@ -49,8 +49,11 @@ describe('DashboardPage', () => {
       userType: 'STAFF',
       is_staff: true
     },
+    isLoading: false,
+    error: null,
     login: vi.fn(),
     logout: vi.fn(),
+    register: vi.fn(),
     isStaff: vi.fn().mockReturnValue(true),
   };
 
@@ -79,24 +82,16 @@ describe('DashboardPage', () => {
     // Reset mocks before test
     vi.clearAllMocks();
 
-    // Create a spy on the DashboardPage's fetchDashboardData function
-    const originalFetch = global.fetch;
-    global.fetch = vi.fn(() => Promise.resolve({
-      ok: true,
-      json: () => Promise.resolve({})
-    }));
-    
-    // Set up the minimum mock implementations needed for the test
-    analyticsService.getIssueAnalytics.mockResolvedValue({ data: { total: 5 } });
-    analyticsService.getEngineerPerformance.mockResolvedValue({ data: [] });
-    analyticsService.getResolutionTime.mockResolvedValue({ data: {} });
-    issuesService.getIssues.mockResolvedValue({ data: [] });
-
     // Create a simple staff context
     const staffContext = {
       isAuthenticated: true,
       isStaff: vi.fn().mockReturnValue(true),
-      currentUser: { id: 1, username: 'admin' }
+      currentUser: { id: 1, username: 'admin', is_staff: true },
+      isLoading: false,
+      error: null,
+      login: vi.fn(),
+      logout: vi.fn(),
+      register: vi.fn(),
     };
 
     // Render with staff authentication
@@ -111,20 +106,17 @@ describe('DashboardPage', () => {
     await waitFor(() => {
       expect(analyticsService.getIssueAnalytics).toHaveBeenCalled();
     }, { timeout: 1000 });
-    
-    // Restore the original fetch
-    global.fetch = originalFetch;
   });
 
   it('redirects unauthenticated users', () => {
     const unauthenticatedContext = {
       ...mockAuthContext,
       isAuthenticated: false,
-      currentUser: null,
+      currentUser: null as User | null,
       isStaff: vi.fn().mockReturnValue(false),
     };
 
-    renderWithAuth(unauthenticatedContext);
+    renderWithAuth(unauthenticatedContext as any);
     
     // There shouldn't be any dashboard content
     expect(screen.queryByText(/dashboard/i)).not.toBeInTheDocument();

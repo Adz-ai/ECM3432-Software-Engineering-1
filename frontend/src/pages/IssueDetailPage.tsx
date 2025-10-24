@@ -1,11 +1,13 @@
-// src/pages/IssueDetailPage.jsx
+// @ts-nocheck
+// src/pages/IssueDetailPage.tsx
 
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { issuesService, engineersService } from '../services/api';
+import { issuesService, engineersService, Issue, Engineer } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import IssueStatusBadge from '../components/issues/IssueStatusBadge';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { SelectChangeEvent } from '@mui/material';
 import 'leaflet/dist/leaflet.css';
 
 // Material UI imports
@@ -50,27 +52,27 @@ import InfoIcon from '@mui/icons-material/Info';
 // Animation imports
 import { motion } from 'framer-motion';
 
-const IssueDetailPage = () => {
-  const { id } = useParams();
+const IssueDetailPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const { isStaff } = useContext(AuthContext);
   const navigate = useNavigate();
   // const theme = useTheme();
   // const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const [issue, setIssue] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [issue, setIssue] = useState<Issue | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [updateData, setUpdateData] = useState({
     status: '',
     assigned_to: '',
   });
-  const [updating, setUpdating] = useState(false);
-  const [updateError, setUpdateError] = useState(null);
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [imageError, setImageError] = useState({});
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [engineers, setEngineers] = useState([]);
-  const [loadingEngineers, setLoadingEngineers] = useState(false);
+  const [updating, setUpdating] = useState<boolean>(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
+  const [imageError, setImageError] = useState<Record<number, boolean>>({});
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [engineers, setEngineers] = useState<Engineer[]>([]);
+  const [loadingEngineers, setLoadingEngineers] = useState<boolean>(false);
 
   useEffect(() => {
     if (!id) {
@@ -83,7 +85,8 @@ const IssueDetailPage = () => {
       try {
         setLoading(true);
         console.log('Fetching issue details for ID:', id);
-        const response = await issuesService.getIssueById(id);
+        const issueId = parseInt(id, 10);
+        const response = await issuesService.getIssueById(issueId);
         console.log('Issue details response:', response.data);
 
         setIssue(response.data);
@@ -124,30 +127,33 @@ const IssueDetailPage = () => {
     fetchEngineers();
   }, [isStaff]);
 
-  const handleUpdateChange = (e) => {
+  const handleUpdateChange = (e: React.ChangeEvent<HTMLInputElement> | SelectChangeEvent<string>): void => {
     const { name, value } = e.target;
     setUpdateData({ ...updateData, [name]: value });
   };
 
-  const handleUpdateSubmit = async (e) => {
+  const handleUpdateSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setUpdating(true);
     setUpdateError(null);
 
     try {
-      await issuesService.updateIssue(id, updateData);
+      if (!id) return;
+      const issueId = parseInt(id, 10);
+      await issuesService.updateIssue(issueId, updateData);
 
       // Refresh issue data
-      const response = await issuesService.getIssueById(id);
+      const response = await issuesService.getIssueById(issueId);
       setIssue(response.data);
-    } catch (err) {
-      setUpdateError(err.response?.data?.message || 'Failed to update issue');
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.message || 'Failed to update issue';
+      setUpdateError(errorMessage);
     } finally {
       setUpdating(false);
     }
   };
 
-  const handleImageError = (index) => {
+  const handleImageError = (index: number): void => {
     setImageError(prev => ({ ...prev, [index]: true }));
     console.error(`Failed to load image at index ${index}`);
   };

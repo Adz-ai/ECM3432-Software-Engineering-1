@@ -47,30 +47,30 @@ const Header = () => {
   // State for handling mobile drawer
   const [mobileOpen, setMobileOpen] = useState(false);
   // State for user menu
-  const [anchorElUser, setAnchorElUser] = useState(null);
+  const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
 
   // Debug display to show authentication state
   const showDebugInfo = import.meta.env.DEV;
 
-  const handleOpenUserMenu = (event) => {
+  const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>): void => {
     setAnchorElUser(event.currentTarget);
   };
 
-  const handleCloseUserMenu = () => {
+  const handleCloseUserMenu = (): void => {
     setAnchorElUser(null);
   };
 
-  const handleDrawerToggle = () => {
+  const handleDrawerToggle = (): void => {
     setMobileOpen((prevState) => !prevState);
   };
 
-  const handleLogout = () => {
+  const handleLogout = (): void => {
     handleCloseUserMenu();
     logout();
     navigate('/');
   };
 
-  const handleNavigation = (path) => {
+  const handleNavigation = (path: string): void => {
     navigate(path);
     if (isMobile) {
       setMobileOpen(false);

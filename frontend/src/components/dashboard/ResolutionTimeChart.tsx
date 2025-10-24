@@ -1,10 +1,25 @@
-// src/components/dashboard/ResolutionTimeChart.jsx
+// src/components/dashboard/ResolutionTimeChart.tsx
 
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { alpha, useTheme } from '@mui/material';
 
-const ResolutionTimeChart = ({ data }) => {
+interface ResolutionTimeChartProps {
+  data: Record<string, string | number>;
+}
+
+interface TooltipPayload {
+  value: number;
+  color: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayload[];
+  label?: string;
+}
+
+const ResolutionTimeChart: React.FC<ResolutionTimeChartProps> = ({ data }) => {
   const theme = useTheme();
 
   // Format data for the chart
@@ -12,15 +27,15 @@ const ResolutionTimeChart = ({ data }) => {
     ([key]) => key !== 'OVERALL'
   ).map(([issueType, time]) => ({
     type: issueType.replace(/_/g, ' '),
-    days: typeof time === 'string' 
-      ? parseFloat(time.split(' ')[0]) 
+    days: typeof time === 'string'
+      ? parseFloat(time.split(' ')[0])
       : (typeof time === 'number' ? time : 0)
   }));
 
   // Sort data by resolution time (descending)
   formattedData.sort((a, b) => b.days - a.days);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div style={{

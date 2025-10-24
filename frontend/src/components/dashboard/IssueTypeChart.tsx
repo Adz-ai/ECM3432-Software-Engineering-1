@@ -1,13 +1,33 @@
-// src/components/dashboard/IssueTypeChart.jsx
+// src/components/dashboard/IssueTypeChart.tsx
 
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
-const IssueTypeChart = ({ data }) => {
+interface IssueTypeData {
+  type: string;
+  count: number;
+}
+
+interface ChartDataItem {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface IssueTypeChartProps {
+  data: IssueTypeData[];
+}
+
+interface PieLabelProps {
+  name: string;
+  percent: number;
+}
+
+const IssueTypeChart: React.FC<IssueTypeChartProps> = ({ data }) => {
   // Transform data if needed
-  const chartData = data.map((item, index) => ({
+  const chartData: ChartDataItem[] = data.map((item: IssueTypeData, index: number) => ({
     name: item.type.replace('_', ' '),
     value: item.count,
     color: COLORS[index % COLORS.length]
@@ -24,9 +44,9 @@ const IssueTypeChart = ({ data }) => {
           outerRadius={100}
           fill="#8884d8"
           dataKey="value"
-          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+          label={({ name, percent }: PieLabelProps) => `${name} ${(percent * 100).toFixed(0)}%`}
         >
-          {chartData.map((entry, index) => (
+          {chartData.map((entry: ChartDataItem, index: number) => (
             <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
         </Pie>

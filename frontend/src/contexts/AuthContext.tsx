@@ -1,7 +1,8 @@
 // src/contexts/AuthContext.tsx
 
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { authService, User, LoginCredentials, RegisterData } from '../services/api';
+import { authService, User, LoginCredentials, RegisterData, AuthResponse } from '../services/api';
+import { AxiosResponse } from 'axios';
 
 interface JwtPayload {
   user_id: number;
@@ -65,9 +66,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (decodedToken) {
           // Create a user object based on the token payload
           // Adjust these fields based on what your token contains
-          const userData = {
+          const userData: User = {
             id: decodedToken.user_id,
-            username: decodedToken.username || decodedToken.user_id || 'User',
+            username: decodedToken.username || String(decodedToken.user_id) || 'User',
             // Check if user_type is 'staff' to set is_staff to true
             is_staff: decodedToken.user_type === 'staff'
           };
@@ -102,19 +103,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Handle both API response formats (direct response or response.data)
       // Make sure we can handle the response in multiple formats to be flexible for testing
-      let responseData, token;
-      
+      let responseData: AuthResponse | undefined;
+      let token: string | undefined;
+
       // First try to access token via response.data.token (normal API format)
-      if (response && response.data && response.data.token) {
-        responseData = response.data;
+      if (response && 'data' in response && response.data && 'token' in response.data) {
+        responseData = response.data as AuthResponse;
         token = responseData.token;
       }
       // Then try direct access (for mocks that return { token, user })
-      else if (response && response.token) {
-        responseData = response;
-        token = response.token;
+      else if (response && 'token' in response) {
+        responseData = response as unknown as AuthResponse;
+        token = responseData.token;
       }
-      
+
       if (!token) {
         console.error('No token in response:', response);
         throw new Error('No token received from server');
@@ -124,7 +126,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       sessionStorage.setItem('token', token);
 
       // Handle the case where user object is directly provided in the response (for testing)
-      if (responseData.user) {
+      if (responseData && responseData.user) {
         console.log('Using user object from response:', responseData.user);
         setCurrentUser(responseData.user);
         return responseData.user;
@@ -136,9 +138,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (decodedToken) {
         // Create a user object based on the token payload
-        const userData = {
+        const usernameStr = typeof username === 'string' ? username : username.username;
+        const userData: User = {
           id: decodedToken.user_id,
-          username: decodedToken.username || decodedToken.user_id || username,
+          username: decodedToken.username || String(decodedToken.user_id) || usernameStr,
           // Check if user_type is 'staff' to set is_staff to true
           is_staff: decodedToken.user_type === 'staff'
         };

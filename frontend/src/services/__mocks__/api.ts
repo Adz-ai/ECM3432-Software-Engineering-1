@@ -2,11 +2,11 @@
 
 // Mock auth service
 export const authService = {
-  login: jest.fn().mockImplementation((credentials) => {
+  login: jest.fn().mockImplementation((credentials, password?) => {
     // Extract username and password consistently regardless of parameter format
     const username = typeof credentials === 'object' ? credentials.username : credentials;
-    const password = typeof credentials === 'object' ? credentials.password : arguments[1];
-    
+    const pass = typeof credentials === 'object' ? credentials.password : password;
+
     // Default successful response that all tests should expect
     return Promise.resolve({
       data: {

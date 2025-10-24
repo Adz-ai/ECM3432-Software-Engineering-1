@@ -1,4 +1,4 @@
-// src/components/issues/IssueForm.jsx
+// src/components/issues/IssueForm.tsx
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -7,24 +7,25 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { motion } from 'framer-motion';
 import L from 'leaflet';
-import { 
-  Box, 
-  Typography, 
-  TextField, 
-  Button, 
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem, 
-  Alert, 
-  Paper, 
-  Stack, 
-  Grid, 
-  Chip, 
-  useTheme, 
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Alert,
+  Paper,
+  Stack,
+  Grid,
+  Chip,
+  useTheme,
   alpha,
   CircularProgress,
-  Tooltip
+  Tooltip,
+  SelectChangeEvent
 } from '@mui/material';
 import {
   ControlPoint as UploadIcon,
@@ -61,7 +62,28 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
-const issueTypes = [
+interface IssueTypeOption {
+  value: string;
+  label: string;
+  icon: JSX.Element;
+}
+
+interface LocationMarkerProps {
+  position: [number, number] | null;
+  setPosition: (position: [number, number]) => void;
+}
+
+interface FormDataState {
+  type: string;
+  description: string;
+}
+
+interface PreviewImage {
+  file: File;
+  preview: string;
+}
+
+const issueTypes: IssueTypeOption[] = [
   { value: 'POTHOLE', label: 'Pothole', icon: <PotholeIcon /> },
   { value: 'STREET_LIGHT', label: 'Street Light', icon: <StreetLightIcon /> },
   { value: 'GRAFFITI', label: 'Graffiti', icon: <GraffitiIcon /> },
@@ -70,9 +92,9 @@ const issueTypes = [
   { value: 'BLOCKED_DRAIN', label: 'Blocked Drain', icon: <BlockedDrainIcon /> },
 ];
 
-const LocationMarker = ({ position, setPosition }) => {
+const LocationMarker: React.FC<LocationMarkerProps> = ({ position, setPosition }) => {
   useMapEvents({
-    click: (e) => {
+    click: (e: L.LeafletMouseEvent) => {
       setPosition([e.latlng.lat, e.latlng.lng]);
     },
   });
@@ -80,21 +102,21 @@ const LocationMarker = ({ position, setPosition }) => {
   return position ? <Marker position={position} /> : null;
 };
 
-const IssueForm = () => {
+const IssueForm: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormDataState>({
     type: '',
     description: '',
   });
 
-  const [files, setFiles] = useState([]);
-  const [position, setPosition] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-  const [previewImages, setPreviewImages] = useState([]);
+  const [files, setFiles] = useState<File[]>([]);
+  const [position, setPosition] = useState<[number, number] | null>(null);
+  const [uploading, setUploading] = useState<boolean>(false);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [previewImages, setPreviewImages] = useState<PreviewImage[]>([]);
 
   // Animation variants
   const fadeIn = {
@@ -110,29 +132,35 @@ const IssueForm = () => {
   // Exeter city center coordinates
   const defaultCenter: [number, number] = [50.7184, -3.5339];
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string>): void => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setUploading(true);
-    const selectedFiles = Array.from(e.target.files);
+    const fileList = e.target.files;
+    if (!fileList) {
+      setUploading(false);
+      return;
+    }
+
+    const selectedFiles = Array.from(fileList);
 
     // Store the selected files for submission
     setFiles(prevFiles => [...prevFiles, ...selectedFiles]);
 
     // Create preview URLs for the UI only
-    const newPreviewImages = selectedFiles.map(file => ({
+    const newPreviewImages: PreviewImage[] = selectedFiles.map((file: File) => ({
       file,
-      preview: URL.createObjectURL(file as File),
+      preview: URL.createObjectURL(file),
     }));
 
     setPreviewImages(prev => [...prev, ...newPreviewImages]);
     setUploading(false);
   };
 
-  const removeImage = (index) => {
+  const removeImage = (index: number): void => {
     // Remove from preview
     const updatedPreviews = [...previewImages];
 
@@ -148,7 +176,7 @@ const IssueForm = () => {
     setFiles(updatedFiles);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
 
     if (!position) {
@@ -176,11 +204,11 @@ const IssueForm = () => {
       // Add text fields
       formDataToSubmit.append('type', formData.type);
       formDataToSubmit.append('description', formData.description);
-      formDataToSubmit.append('latitude', position[0]);
-      formDataToSubmit.append('longitude', position[1]);
+      formDataToSubmit.append('latitude', position[0].toString());
+      formDataToSubmit.append('longitude', position[1].toString());
 
       // Add image files
-      files.forEach(file => {
+      files.forEach((file: File) => {
         formDataToSubmit.append('images', file);
       });
 
@@ -189,9 +217,10 @@ const IssueForm = () => {
       // On successful submission, navigate to the home page or issue detail
       navigate('/');
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating issue:', err);
-      setError(err.response?.data?.message || 'Failed to submit issue. Please try again.');
+      const errorMessage = err?.response?.data?.message || 'Failed to submit issue. Please try again.';
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }

@@ -1,9 +1,9 @@
-// src/components/dashboard/StaffPerformance.jsx
+// src/components/dashboard/StaffPerformance.tsx
 
-import React, { useState } from 'react';
-import { 
+import React, { useState, ReactNode } from 'react';
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell 
+  PieChart, Pie, Cell
 } from 'recharts';
 import {
   Box, Card, CardContent, Typography, Grid, Tabs, Tab, Divider,
@@ -11,14 +11,78 @@ import {
   Chip, Avatar, Badge, Stack, LinearProgress, Button
 } from '@mui/material';
 import {
-  CheckCircleOutline, PendingActions, AssignmentInd, 
+  CheckCircleOutline, PendingActions, AssignmentInd,
   AccessTime, Speed, Engineering
 } from '@mui/icons-material';
+
+// Type definitions
+interface Engineer {
+  id: number;
+  name: string;
+  specialization: string;
+}
+
+interface EngineerPerformanceData {
+  engineer: Engineer;
+  issues_resolved: number;
+  issues_assigned: number;
+  total_issues: number;
+  avg_resolution_time: string;
+  resolved_issues_by_type: Record<string, number>;
+  assigned_issues_by_type: Record<string, number>;
+}
+
+interface EngineerTableData {
+  id: number;
+  name: string;
+  specialization: string;
+  resolved: number;
+  assigned: number;
+  totalIssues: number;
+  avgTime: string;
+}
+
+interface IssueTypePieChartProps {
+  data: Record<string, number>;
+  title: string;
+}
+
+interface PerformanceCardProps {
+  title: string;
+  value: number;
+  icon: ReactNode;
+  color: string;
+}
+
+interface EngineerTableProps {
+  engineers: EngineerTableData[];
+}
+
+interface StaffPerformanceProps {
+  data?: EngineerPerformanceData[];
+}
+
+interface TooltipPayloadItem {
+  value?: number;
+  dataKey: string;
+  color: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+  label?: string;
+}
+
+interface PieLabelProps {
+  name: string;
+  percent: number;
+}
 
 // Colors for the pie charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
-const IssueTypePieChart = ({ data, title }) => {
+const IssueTypePieChart: React.FC<IssueTypePieChartProps> = ({ data, title }) => {
   // Filter out any zero values to make the pie chart cleaner
   const chartData = Object.entries(data)
     .filter(([_, value]) => (value as number) > 0)
@@ -43,13 +107,13 @@ const IssueTypePieChart = ({ data, title }) => {
                   outerRadius={80}
                   paddingAngle={5}
                   dataKey="value"
-                  label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({name, percent}: PieLabelProps) => `${name} ${(percent * 100).toFixed(0)}%`}
                 >
-                  {chartData.map((entry, index) => (
+                  {chartData.map((entry, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => [`${value} issues`, 'Count']} />
+                <Tooltip formatter={(value: number) => [`${value} issues`, 'Count']} />
               </PieChart>
             </ResponsiveContainer>
           ) : (
@@ -63,7 +127,7 @@ const IssueTypePieChart = ({ data, title }) => {
   );
 };
 
-const PerformanceCard = ({ title, value, icon, color }) => (
+const PerformanceCard: React.FC<PerformanceCardProps> = ({ title, value, icon, color }) => (
   <Card sx={{ height: '100%' }}>
     <CardContent>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -90,7 +154,7 @@ const PerformanceCard = ({ title, value, icon, color }) => (
   </Card>
 );
 
-const EngineerTable = ({ engineers }) => {
+const EngineerTable: React.FC<EngineerTableProps> = ({ engineers }) => {
   return (
     <TableContainer component={Paper} sx={{ maxHeight: 440 }}>
       <Table stickyHeader aria-label="engineer performance table" size="small">
@@ -104,7 +168,7 @@ const EngineerTable = ({ engineers }) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {engineers.map((engineer) => (
+          {engineers.map((engineer: EngineerTableData) => (
             <TableRow key={engineer.id} hover>
               <TableCell component="th" scope="row">
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -156,8 +220,8 @@ const EngineerTable = ({ engineers }) => {
   );
 };
 
-const StaffPerformance = ({ data = [] }) => {
-  const [tabValue, setTabValue] = useState(0);
+const StaffPerformance: React.FC<StaffPerformanceProps> = ({ data = [] }) => {
+  const [tabValue, setTabValue] = useState<number>(0);
 
   // If no data is provided, show a loading state or message
   if (!data || data.length === 0) {
@@ -173,7 +237,7 @@ const StaffPerformance = ({ data = [] }) => {
   }
 
   // Transform engineer data for charts and tables
-  const engineerTableData = data.map(engineer => ({
+  const engineerTableData: EngineerTableData[] = data.map((engineer: EngineerPerformanceData) => ({
     id: engineer.engineer.id,
     name: engineer.engineer.name,
     specialization: engineer.engineer.specialization,
@@ -184,7 +248,7 @@ const StaffPerformance = ({ data = [] }) => {
   }));
 
   // Get first engineer for detailed view
-  const selectedEngineer = data[tabValue];
+  const selectedEngineer: EngineerPerformanceData | undefined = data[tabValue];
 
   return (
     <Box sx={{ p: 0 }}>
@@ -200,26 +264,26 @@ const StaffPerformance = ({ data = [] }) => {
           />
         </Grid>
         <Grid item xs={12} md={3}>
-          <PerformanceCard 
-            title="Total Issues Handled" 
-            value={data.reduce((sum, eng) => sum + eng.total_issues, 0)} 
-            icon={<AssignmentInd color="secondary" />} 
+          <PerformanceCard
+            title="Total Issues Handled"
+            value={data.reduce((sum: number, eng: EngineerPerformanceData) => sum + eng.total_issues, 0)}
+            icon={<AssignmentInd color="secondary" />}
             color="secondary"
           />
         </Grid>
         <Grid item xs={12} md={3}>
-          <PerformanceCard 
-            title="Issues Resolved" 
-            value={data.reduce((sum, eng) => sum + eng.issues_resolved, 0)} 
-            icon={<CheckCircleOutline color="success" />} 
+          <PerformanceCard
+            title="Issues Resolved"
+            value={data.reduce((sum: number, eng: EngineerPerformanceData) => sum + eng.issues_resolved, 0)}
+            icon={<CheckCircleOutline color="success" />}
             color="success"
           />
         </Grid>
         <Grid item xs={12} md={3}>
-          <PerformanceCard 
-            title="Currently Assigned" 
-            value={data.reduce((sum, eng) => sum + eng.issues_assigned, 0)} 
-            icon={<PendingActions color="warning" />} 
+          <PerformanceCard
+            title="Currently Assigned"
+            value={data.reduce((sum: number, eng: EngineerPerformanceData) => sum + eng.issues_assigned, 0)}
+            icon={<PendingActions color="warning" />}
             color="warning"
           />
         </Grid>
@@ -239,7 +303,7 @@ const StaffPerformance = ({ data = [] }) => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip content={CustomTooltip} />
+                    <Tooltip content={CustomTooltip as any} />
                     <Legend />
                     <Bar dataKey="resolved" name="Resolved Issues" fill="#82ca9d" />
                     <Bar dataKey="assigned" name="Assigned Issues" fill="#8884d8" />
@@ -365,22 +429,22 @@ const StaffPerformance = ({ data = [] }) => {
 };
 
 // Custom tooltip component for the chart
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
       <Paper sx={{ p: 1.5, boxShadow: 2 }}>
         <Typography variant="subtitle2" sx={{ mb: 1 }}>{label}</Typography>
-        {payload.map((entry, index) => (
+        {payload.map((entry: TooltipPayloadItem, index: number) => (
           <Box key={`item-${index}`} sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-            <Box 
-              component="span" 
-              sx={{ 
-                width: 12, 
-                height: 12, 
-                borderRadius: '50%', 
+            <Box
+              component="span"
+              sx={{
+                width: 12,
+                height: 12,
+                borderRadius: '50%',
                 bgcolor: entry.color,
                 display: 'inline-block',
-                mr: 1 
+                mr: 1
               }}
             />
             <Typography variant="body2" color="text.secondary">

@@ -7,8 +7,16 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 // Define interfaces for API data structures
 export interface User {
+  id?: number;
   username: string;
   is_staff: boolean;
+  email?: string;
+  userType?: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: User;
 }
 
 export interface LoginCredentials {
@@ -20,11 +28,8 @@ export interface RegisterData {
   username: string;
   password: string;
   email?: string;
-}
-
-export interface AuthResponse {
-  token: string;
-  user: User;
+  is_staff?: boolean;
+  staff_secret?: string;
 }
 
 export interface Location {

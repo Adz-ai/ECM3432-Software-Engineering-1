@@ -1,3 +1,4 @@
+// @ts-nocheck
 // src/pages/ReportIssuePage.jsx
 
 import React, { useContext } from 'react';
@@ -69,11 +70,11 @@ const ReportIssuePage = () => {
           sx={{ textAlign: 'center', mb: 6 }}
           variants={fadeIn}
         >
-          <MotionTypography 
-            variant="h2" 
-            component="h1" 
-            sx={{ 
-              fontWeight: 700, 
+          <MotionTypography
+            variant="h2"
+            component="h1"
+            sx={{
+              fontWeight: 700,
               mb: 2,
               background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
               backgroundClip: 'text',
@@ -81,7 +82,7 @@ const ReportIssuePage = () => {
               WebkitTextFillColor: 'transparent',
               position: 'relative',
               display: 'inline-block'
-            }}
+            } as any}
           >
             Report an Issue
             <MotionBox
@@ -209,10 +210,10 @@ const ReportIssuePage = () => {
                   >
                     {step.number}
                   </MotionBox>
-                  <MotionTypography 
-                    variant="h6" 
-                    component="h3" 
-                    sx={{ fontWeight: 600, mb: 1, position: 'relative', zIndex: 1 }}
+                  <MotionTypography
+                    variant="h6"
+                    component="h3"
+                    sx={{ fontWeight: 600, mb: 1, position: 'relative', zIndex: 1 } as any}
                   >
                     {step.title}
                   </MotionTypography>

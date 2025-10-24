@@ -24,13 +24,13 @@ vi.mock('../services/api', () => {
 
 // Mock sessionStorage
 const mockSessionStorage = (() => {
-  let store = {};
+  let store: Record<string, string> = {};
   return {
-    getItem: vi.fn((key) => store[key] || null),
-    setItem: vi.fn((key, value) => {
+    getItem: vi.fn((key: string) => store[key] || null),
+    setItem: vi.fn((key: string, value: string) => {
       store[key] = value.toString();
     }),
-    removeItem: vi.fn((key) => {
+    removeItem: vi.fn((key: string) => {
       delete store[key];
     }),
     clear: vi.fn(() => {

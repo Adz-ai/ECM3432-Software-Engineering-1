@@ -1,5 +1,5 @@
 // Mock for axios
-const mockAxios = {
+const mockAxios: any = {
   defaults: {
     headers: {
       common: {},
@@ -10,7 +10,7 @@ const mockAxios = {
   post: jest.fn(() => Promise.resolve({ data: {} })),
   put: jest.fn(() => Promise.resolve({ data: {} })),
   delete: jest.fn(() => Promise.resolve({ data: {} })),
-  create: jest.fn(() => mockAxios),
+  create: jest.fn((): any => mockAxios),
   interceptors: {
     request: {
       use: jest.fn(),

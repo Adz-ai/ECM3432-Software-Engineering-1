@@ -1,10 +1,15 @@
-// src/components/common/ProtectedRoute.jsx
+// src/components/common/ProtectedRoute.tsx
 
-import React, { useContext } from 'react';
+import React, { useContext, ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 
-const ProtectedRoute = ({ children, staffOnly = false }) => {
+interface ProtectedRouteProps {
+  children: ReactNode;
+  staffOnly?: boolean;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, staffOnly = false }) => {
   const { currentUser, isLoading, isStaff } = useContext(AuthContext);
 
   if (isLoading) {
